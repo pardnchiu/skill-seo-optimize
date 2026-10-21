@@ -2,10 +2,18 @@
 
 完整規範以 `SKILL.md` 與 `scripts/` 為準（＝最新規範）；本檔只用於快速定位先前執行本 skill 套用到專案的 SEO 變更（meta、JSON-LD、robots.txt、sitemap、`_headers`、llms.txt、建置腳本等）與最新規範的差異，命中即直接修改。
 
-最新改動：2026-10-07
+最新改動：2026-10-21
 
 ## 破壞性變更
 
+- 有 web surface 但未產生 llms.txt（舊判準僅 agent-facing 文件）、或因頁數 ≤ 5／單一 surface 未建 sitemap、robots.txt → 依 R7 全部補上
+- 既有頁面內文未點名競品，或競品少於 3 個、未依熱度選出 → 依 Phase B-4 重定競品（至少 3 個），在每個語言版本內文加入關聯／差異／特點段落
+- 次要關鍵字含冷僻詞（avg、recent12w、recent4w 皆 < 1）→ 移除或換成較高熱度寫法並詢問，連帶重評 `one_liner` 與 topics
+- en 關鍵字熱度以 `US` 量（config `keyword_volume.geo` 無 `WW`）→ 以 `--geo WW --hl en-US` 重量 en 詞並依結果重評、詢問，寫回 `keyword_volume.geo`
+- title／meta description／H1 含競品名或「X alternative／X 替代」→ 改為本專案自身定位（高熱度類別詞與生態詞），競品名只留內文對比
+- 關鍵字只依出現來源數選定、未量熱度（config 無 `keyword_volume`）→ 跑 Phase B-4／B-5 與 Step 3.2，依熱度 × 競品交集重選並詢問，寫入 `keyword_volume`、`competitors`
+- 頁面範本或腳本於載入時以 history API／`location.hash` 移除 URL hash、強制捲回頂端，或主要內容預設收在折疊區／tab → 保留 hash、移除載入時的捲動控制、主要內容預設展開（R5，Google snippet「Read more」深層連結條件）
+- 根路徑依 `Accept-Language`／IP 自動導向其他語言版 → 改為根路徑回傳固定內容並放可見語言切換連結（R3）
 - JSON-LD Organization 英文名 `Pardn Co., LTD` → `Pardn Co., Ltd`（英文頁 `name`、中文頁 `alternateName`；使用者 2026-10-06 指定，取代先前的 LTD 寫法）
 - 關鍵字僅由原始碼推導（config 無 `keyword_research`）→ 跑 Phase B 競品研究（搜尋第一頁、GitHub 高星同類、HN），依 Step 3「候選設計」重新提出關鍵字並詢問，寫入 `keyword_research`；關鍵字變動時連帶重評 `one_liner` 與 topics（R9）。舊 Phase B（關鍵字後補查）改名 Phase C
 - README 首段只回報建議、repo description 另寫 → 依 R9 設計 config `one_liner`（en／zh），repo description 改為 `one_liner.en`（保留 `(module)` 等前綴），README 與中文 README 順序 3 那一行替換為 `one_liner`

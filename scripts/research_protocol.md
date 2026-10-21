@@ -1,6 +1,6 @@
 # Research Protocol
 
-**每次執行 `/seo-optimize` 都必須完整跑一次本協定。**禁止沿用上一次的 digest、禁止僅憑模型內建知識作答。
+**Phase A（SEO／AEO／GEO 研究報告）：有 3 日內生成的報告則沿用，沒有就必須完整跑一次；Phase B、C 依 SKILL.md 條件執行。**禁止沿用超過 3 日的報告、禁止僅憑模型內建知識作答。
 
 **為何強制：** SEO / AEO 的有效做法半年內會反轉。2025 年多數指南主張「加 llms.txt 提升 AI 可見度」，2026-05-15 Google 官方指南明文表示 llms.txt 被忽略；同一份官方文件也推翻了「特定 schema 類型可觸發 AI 引用」的說法。依賴快取知識會直接產出反效果的優化動作。
 
@@ -36,6 +36,7 @@
 | 9 | `Bing Webmaster Tools AI Performance IndexNow ChatGPT {YYYY}` | Bing 索引與 ChatGPT / Copilot 檢索關係、BWT 報告變動 |
 | 10 | `generative engine optimization GEO survey arxiv {YYYY}` | GEO 學術證據現況（哪些技巧有可重現效果） |
 | 11 | `Google spam policy generative AI responses {YYYY}` | 操弄 AI 回答的處分範圍變動 |
+| 12 | `deprecated OR ignored SEO meta tags structured data properties {YYYY}` | 過時參數：已廢棄、被引擎忽略或不再著重的 meta、schema 屬性、指令 |
 
 ### A-2 必抓一手來源
 
@@ -98,7 +99,7 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 
 1. **不得**寫入 digest 的「可執行做法」
 2. **必須**寫入 digest 的「業界迷思」欄，附上被推翻的 Tier 1 出處與日期
-3. 若該迷思已存在於專案（例：已有無用的 llms.txt），列為「可移除項」而非「已完成項」
+3. 若該迷思已存在於專案（例：為 AI 塞的直答塊樣板），列為「可移除項」而非「已完成項」
 
 ---
 
@@ -119,10 +120,42 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 | HN 無結果 | 記「無 points > 50 的 story」，不放寬門檻硬湊 |
 | ZH seed | B-2、B-3 以 ZH seed 常無結果；仍須跑一次並如實記錄，不以 EN 結果代替 ZH |
 
+### B-4 競品用詞（必跑）
+
+競品的品牌名與它們自己用的類別詞，十之八九就是該領域的熱門詞；只看 seed 的第一頁會漏掉它們。
+
+| 步驟 | 取法 | 記錄欄位 |
+|---|---|---|
+| 確定競品清單 | 至少 3 個：使用者點名者全部列入（先查證名稱實際指哪個產品，拼錯或俗稱要確認，不猜）；不足 3 個時從 B-1／B-2 反覆出現、被當比較基準的產品中，以品牌名熱度（B-5，EN 全球）與 GitHub 星數排序取最熱門者補滿 | 產品、官方站／repo、熱度、★、判定依據 |
+| 分類 | 依部署型態（雲端／本地／自架／SaaS 等）與本專案同型或異型歸類 | 類型、與本專案同型或異型 |
+| 收集用詞 | curl 官方首頁原始 HTML 取 `<title>`、meta description、H1；`gh api repos/{owner}/{repo}` 取 description、topics、星數、主要語言 | 原文欄位、它用的類別詞 |
+| 用詞數量 | 全部競品合計 EN、ZH 各 ≥ 10 個（品牌名、類別詞、功能詞）；ZH 取自競品繁中頁，沒有則取 ZH 第一頁介紹該競品的頁面用詞，不由 EN 翻譯；不足 10 個時如實記錄缺口 | 詞、語言、出處 |
+
+### B-5 熱度量測（必跑）
+
+以 `scripts/trends.py` 量 Google Trends 相對熱度，候選詞包含：B-4 收集的每個詞（逐詞都量）、seed、本專案能力詞。同一次量測用同一個 anchor（選中等熱度、與專案直接相關的詞），跨批次才可比較。
+
+```bash
+python3 -I ~/.claude/skills/seo-optimize/scripts/trends.py --anchor "{anchor}" --geo {GEO,...} --hl {hl} "{term1}" "{term2}" ...
+```
+
+| 邊界 | 規則 |
+|---|---|
+| geo | EN 以英文詞量全球（`--geo WW --hl en-US`）；ZH 以台灣繁中詞量台灣（`--geo TW --hl zh-TW`）；不以其他地區結果代替 |
+| 欄位 | `avg`（12 個月平均）、`recent12w`（近 12 週）、`recent4w`（近 4 週）都記錄；新品上市造成的近期暴衝看 `recent12w`、`recent4w` |
+| 被限流（`[Unavailable]`／`[Limit]`） | 間隔後重跑；仍失敗則 digest 記「熱度未量」，該詞不得以熱度為理由入選 |
+| 泛用字 | 一般英文單字（如 `harness`）的熱度不代表有人在搜本領域，須以詞組重量（`ai harness`） |
+
 產出寫入 digest 的「競品研究」段：
 
 ```markdown
 ## 競品研究（Phase B）
+
+### 競品定位
+| 產品 | 類型 | 同型／異型 | ★ | Title | Meta description | H1 | 類別詞 |
+
+### 熱度（anchor：{anchor}，{geo}）
+| 詞 | avg | recent12w | recent4w | 來源（競品名／競品類別詞／seed／能力詞） |
 
 ### 第一頁（{seed}，{locale}）
 | 排名 | 頁面型態 | Title | Description 用詞 | URL |
@@ -134,7 +167,7 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 | Title | Points | Comments | 日期 | URL |
 
 ### 詞彙彙整（{locale}）
-| 詞 | 出現來源數 | 代表來源 | 本專案具備 | 結論（主要／次要／不採用＋原因） |
+| 詞 | 熱度（avg／recent12w／recent4w） | 競品交集 | 出現來源數 | 代表來源 | 本專案具備 | 結論（主要／次要／不採用＋原因） |
 ```
 
 ---
@@ -145,13 +178,12 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 |---|---|
 | 有實體營業地點 | `Google Business Profile {YYYY} ranking factors NAP consistency` |
 | 目標引擎含 ChatGPT / Perplexity / Claude | `{keyword}` 直接問一次各引擎的公開介面不可行時，改查 `{topic} most cited sources {YYYY}` |
-| 專案為開發者工具／函式庫 | `llms.txt agent-facing documentation Anthropic OpenAI recommendation` — 判斷本專案是否落在 llms.txt 的**有效例外**（agent 取用的開發文件） |
 
 ---
 
 ## Digest 產出
 
-寫入 `{PROJECT_PATH}/.doc/seo-optimize/research-{yyyy-MM-dd}.md`，結構如下：
+Phase A 寫入 `~/.claude/skills/seo-optimize/.doc/research/{yyyy-MM-dd}.md`（有 3 日內的報告則沿用，不重跑、不重寫）；Phase B／C 寫入 `{PROJECT_PATH}/.doc/seo-optimize/research-{yyyy-MM-dd}.md`，開頭連到所用的 Phase A 報告。Phase A 報告結構如下：
 
 ```markdown
 # SEO / AEO 研究摘要（{yyyy-MM-dd}）
@@ -172,15 +204,23 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 | 主張 | 推翻它的 Tier 1 依據 | 對本專案的意涵 |
 |---|---|---|
 
+## 過時參數
+| 參數 | 狀態（已廢棄／被忽略／不再著重） | 依據來源（日期） | 建議（移除／保留但最低優先） |
+|---|---|---|---|
+
 ## 標準追蹤（A-5）
 | 名稱 | A12 記錄的狀態 | 本次實抓狀態 | 變化 | 來源 URL |
 |---|---|---|---|---|
 
 ## 與上次執行的差異
-{若 .doc/seo-optimize/ 存在舊 digest，逐項比對並列出變動；無舊檔則寫「首次執行」}
+{與 `.doc/research/` 中前一份報告逐項比對並列出變動；無舊檔則寫「首次執行」}
 
 ## 本次可執行結論
 {條列，每條必須對應到 optimization_rules.md 的某條規則；無對應者刪除}
+
+## 本次發現的新規範
+| 規範 | 來源 URL（日期） | skill 原本 | 最新內容 | 本次處理 |
+|---|---|---|---|---|
 ```
 
 **驗證：** digest 中每個「可執行結論」都必須能指到 Tier 1 或 Tier 2 出處。指不到的刪除，不得以「業界普遍認為」保留。

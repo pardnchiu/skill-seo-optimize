@@ -65,6 +65,7 @@
 | 主要內容頁帶 `nosnippet`、過小的 `max-snippet`，或 `data_nosnippet > 0` 包住主要內容 | 向使用者確認是否有意；這些指令同時移除一般搜尋摘要與 AI Overviews / AI Mode 的輸入資格（A5） |
 | 有多語版本但缺 `hreflang` | 每個語言版本列出全部語言（含自身）的 `<link rel="alternate" hreflang>`，並加 `x-default` |
 | `hreflang` 不互相對應（A 指向 B，B 未指回 A）或值非合法語言碼 | 修正為雙向且使用 `en` / `zh-Hant` 等 BCP 47 語言碼 |
+| 依 `Accept-Language`／IP 自動導向或在同一 URL 動態切換語言 | 改為各語言固定 URL，根路徑回傳固定內容並放可見的語言切換連結；Googlebot 通常自美國抓取且不帶 `Accept-Language`，動態切換的變體可能抓不到（A8 多語站語言判定） |
 
 **邊界**：
 - `hreflang` 各語言等權（見 SKILL.md 固定預設），`x-default` 指向語言選擇頁或無語言偏向的入口，不指向任一特定語言
@@ -93,6 +94,7 @@
 - 每頁一個 h1，對應該頁主題
 - 用語意化標籤標出主要內容（`<main>`、`<article>`）與導覽（`<nav>`）
 - 長頁以 h2 分段，標題寫成使用者實際會問的形式（「如何設定 cron 排程」優於「設定」）
+- 主要內容預設可見，不藏在折疊區或 tab；頁面載入時不以 JavaScript 控制捲動位置，呼叫 history API 或改 `location.hash` 時保留 URL 的 hash fragment（snippet「Read more」深層連結條件，A4）
 
 **邊界**：
 - **禁止**為了 AI 而把每個 section 前面塞「直答塊」樣板，或把長頁拆成大量單一問答頁——見 knowledge_anchors A4，這是被官方點名的反模式
@@ -118,6 +120,7 @@
 **邊界（重要）**：
 - 標註內容必須與頁面上**可見內容一致**。頁面沒有 FAQ 區塊就標 `FAQPage`、沒有評分就標 `aggregateRating`，屬結構化資料垃圾，會被處分
 - **不得**以「提升 AI 引用」為理由加 schema——官方已否定該因果（A2）。理由寫「rich results 資格」或「實體理解」
+- `SoftwareApplication` 的 rich result 須有 `offers.price`（免費填 `0`）與真實的 `aggregateRating` 或 `review`（A2）；沒有真實評分／評論者仍可標註，理由寫「實體理解」，不得補評分求資格
 - 既有標註正確 → 不動
 
 **Organization 判準**：只為**實際存在**的組織產生 `Organization` 節點——公司登記名稱、有官網或 GitHub org 可對應者。地區、職能、口號等定位文字（例：「Taiwan · Infrastructure Engineering」）不是組織，放可見署名或 tagline，不得成為 `Organization` 並把作者掛為 `founder`。多語站各語言頁用該語言的正式名稱（中文頁「帕登國際有限公司」、英文頁「Pardn Co., Ltd」），另一語言放 `alternateName`，`@id` 共用。作者網站已宣告 Organization 時沿用其 `@id`。（歷史事故：go-llm-router 2026-10-02 文件站把定位文字宣告為組織，作者網站上沒有對應節點。）
@@ -134,7 +137,7 @@
 |---|---|---|
 | `User-agent: *` + `Disallow: /`（站台應公開） | 移除全站封鎖 | Critical |
 | 封鎖了檢索型 bot（`OAI-SearchBot`／`Claude-SearchBot`／`PerplexityBot`／`Googlebot` 等） | 向使用者確認是否有意；非有意則移除 | Critical |
-| 無 robots.txt 且站台有多個 surface | 建立，含 `Sitemap:` 指令 | Medium |
+| 無 robots.txt | 建立，含 `Sitemap:` 指令 | Medium |
 | 有 robots.txt 但無 `Sitemap:` 指令且 sitemap 存在 | 補指令 | Low |
 | 使用者明確表示要退出 AI 訓練 | 逐一列出訓練型 bot（見 A5 表），**不得**用 `*` | — |
 | robots.txt 封鎖使用者觸發型 fetcher（`Google-Agent`、`ChatGPT-User`、`Perplexity-User`） | 告知該規則無效（這些 fetcher 忽略 robots.txt，見 A5）；實際需要阻擋者改在 CDN / WAF 層處理 | Low |
@@ -142,7 +145,7 @@
 
 ### R7.2 sitemap.xml
 
-**判準**：站台有 > 5 個頁面且無 sitemap；或 sitemap 存在但頁面數與 `page_count` 明顯不符。
+**判準**：無 sitemap；或 sitemap 存在但頁面數與 `page_count` 明顯不符。
 
 **動作**：產生／更新 sitemap，含 `<lastmod>`。有建置流程者改為在建置階段產生，不手動維護一份會漂移的靜態檔。
 
@@ -150,14 +153,14 @@
 
 ### R7.3 llms.txt
 
-**判準（唯一觸發條件）**：本專案是**供 AI agent 取用的開發者文件**（SDK / CLI / library 的 docs surface）。
+**判準**：`web_surfaces` 非空即產生，不論是否為 agent-facing 文件（使用者 2026-10-21 指定：SEO／GEO／AEO 面向全部補齊）。
 
 **動作**：於文件站根目錄產生 llms.txt，列出主要文件頁的標題、URL 與一行說明，並依 llms.txt 規格**最新版**（A3、A12）實作其探索機制。研究查到規格新版時，新增的機制一律列入規劃實作，不列為「選用、由使用者決定」。目前（v2）包含：
 
 | 項目 | 內容 |
 |---|---|
 | 每頁 Markdown 版 | `/{slug}.md`（目錄型 URL 用 `index.md`）；llms.txt 的連結指向 Markdown 版 |
-| 探索連結 | 每頁 `<head>` 加 `<link rel="alternate" type="text/markdown" href="…md">` 與 `<link rel="describedby" href="/llms.txt">` |
+| 探索連結 | 每頁 `<head>` 加 `<link rel="alternate" type="text/markdown" href="...md">` 與 `<link rel="describedby" href="/llms.txt">` |
 | 可見連結 | 頁面可見區（如署名列）放 `llms.txt` 與本頁 Markdown 連結——fetch 工具把 HTML 轉成 Markdown 後連結仍在，不跟隨 `<head>` link 的 agent 也找得到 |
 | 符號索引 | 函式庫／SDK 文件在 llms.txt 加 `## Symbols`：公開符號 → 記載它的頁面，讓以符號名查文件一次命中 |
 | 全文檔 | `llms-full.txt` 依導覽順序串接全部頁面、每段標示來源 URL；多語站每個語言各一份 |
@@ -173,8 +176,6 @@
 **產出後必須驗證（強制）**：把 llms.txt 內的每個 URL 對照實際頁面（Markdown 版）清單比對，列出「llms.txt 有但頁面無」與「頁面有但 llms.txt 無」兩份差集。llms.txt 是給 agent 讀的入口索引，指向 404 比沒有這個檔更糟——agent 會把它當成權威清單。
 
 **邊界**：
-- 行銷官網、一般內容站 → **不產生**。Google 明文忽略（A3），產生它只是增加維護負擔
-- 專案已有 llms.txt 但不屬上述例外 → 列為「可移除項」，交由使用者決定，不自行刪除
 - 任何情況下**不得**宣稱 llms.txt 會提升搜尋或 AI 可見度
 - **不得因為「它不影響排名」就在規劃中略過本規則**：`analyze_seo.py` 的 `crawler_directives.llms_txt` 已回報其有無，判準成立時它就是一個待執行項，不是可選的加分題。（歷史事故：Agenvoy-page 一次執行中，llms.txt 因被歸類為「非文字改動」而在套用階段被整項跳過，使用者事後才發現漏掉。）
 
@@ -281,7 +282,7 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 **動作**：
 - 未驗證 → 列入「需人工後續」：於 GSC 與 BWT 驗證並提交 sitemap；BWT 可直接匯入 GSC 設定
 - 有建置／部署流程且未接 IndexNow → 規劃在部署後送出變更 URL 至 IndexNow（需使用者提供或同意產生 key，key 檔置於站台根目錄）。實作要求：key 檔在部署**前**產生並隨站台上線；每次只送 `lastmod` 與上次送出紀錄不同的 URL，不重送未變更頁面；回應 200／202 才記錄為已送出，其他狀態碼視為失敗並輸出回應內容（讀取上限 8 KiB）
-- 量測指向一手報告：GSC 的 Generative AI performance report、BWT 的 AI Performance（Copilot、Bing AI 摘要與 select partner integrations；官方未點名 ChatGPT），以其 Citation Share／Intents／Topics（2026-06 preview，A9）判讀各 grounding query 的引用佔比
+- 量測指向一手報告：GSC 的 Generative AI performance report、BWT 的 AI Performance（Copilot、Bing AI 摘要與 select partner integrations；官方未點名 ChatGPT），以其 Citation Share／Intents／Topics（2026-06 preview，A9）判讀各 grounding query 的引用佔比；Topics Portfolio（2026-10-13 beta，A9）的 Opportunity Queries 只作規劃方向參考，官方標明非精確數據
 
 **為何**：ChatGPT 與 Copilot 的檢索層是 Bing 索引（A9），只做 Google 等於放棄這兩個引擎。
 
@@ -333,7 +334,7 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 | 為查詢變體大量產生近似頁面 | Google 明列為 scaled content abuse |
 | 標註頁面上不存在的內容（假 FAQ、假評分、假作者） | 結構化資料垃圾，會被人工處分 |
 | 隱藏文字、以 CSS 藏關鍵字、cloaking | 明確違規 |
-| 為非 agent-facing 站台產生 llms.txt 並宣稱有 SEO 效果 | 與官方立場衝突（A3），製造無效維護負擔 |
+| 宣稱 llms.txt 有 SEO／AI 可見度效果 | 與官方立場衝突（A3） |
 | 承諾排名或流量成長幅度 | 無法驗證；研究數據只能標為研究結論 |
 | 在 `code_type` 無 web surface 時虛構頁面優化 | 幻覺；該類專案的 surface 是 R8–R10 |
 | 大量頁面套用同一份樣板 description / OG | 重複內容訊號，且對使用者無資訊價值 |

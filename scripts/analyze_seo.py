@@ -10,6 +10,8 @@ Reports only what is present in the tree. Absent surfaces are reported as
 absent, never inferred.
 """
 
+from __future__ import annotations
+
 import json
 import re
 import sys
