@@ -84,10 +84,10 @@ def main():
                 rows[args.anchor] = a
             for t in batch[1:]:
                 v = res[t]
-                rows[t] = tuple(v[k] * ref[k] / a[k] if a[k] else 0.0 for k in range(3))
+                rows[t] = tuple(v[k] if a is ref else (v[k] * ref[k] / a[k] if a[k] else None) for k in range(3))
             time.sleep(4)
         out[geo] = {
-            "rows": sorted(([t, *(round(x, 2) for x in v)] for t, v in rows.items()), key=lambda r: -r[1]),
+            "rows": sorted(([t, *(None if x is None else round(x, 2) for x in v)] for t, v in rows.items()), key=lambda r: -(r[1] or 0)),
             "errors": errors,
         }
     print(json.dumps({"anchor": args.anchor, "time": args.time, "columns": ["term", "avg", "recent12w", "recent4w"], "geo": out}, ensure_ascii=False, indent=1))

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import unicodedata
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -284,7 +285,7 @@ def parse_html(path: Path, rel: str) -> PageInfo | None:
     page = PageInfo(path=rel)
     if m := TITLE_RE.search(content):
         page.title = _strip_tags(m.group(1)).strip()
-        page.title_length = len(page.title)
+        page.title_length = sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in page.title)
     if m := HTML_LANG_RE.search(content):
         page.lang = m.group(1)
 
@@ -292,7 +293,7 @@ def parse_html(path: Path, rel: str) -> PageInfo | None:
     _collect_links(content, page)
     _collect_jsonld(content, page)
 
-    page.description_length = len(page.description)
+    page.description_length = sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in page.description)
     page.h1 = [_strip_tags(h).strip() for h in H1_RE.findall(content)]
     page.h2_count = len(H2_RE.findall(content))
     page.word_count = _text_word_count(_strip_tags(content))
