@@ -12,7 +12,7 @@
 
 | 情境 | 生效規則組 |
 |---|---|
-| `web_surfaces` 非空 | R1–R6（頁面層）＋ R7（爬蟲指令）＋ R10（實體一致性）＋ R11（初始 HTML）＋ R12（索引提交）＋ R13（AI 使用偏好宣告）＋ R14（Favicon） |
+| `web_surfaces` 非空 | R1–R6（頁面層）＋ R7（爬蟲指令）＋ R10（實體一致性）＋ R11（初始 HTML）＋ R12（索引提交）＋ R13（AI 使用偏好宣告）＋ R14（Favicon）＋ R15（網址遷移與導向）＋ R16（索引範圍） |
 | `code_type` ∈ {library, cli} | R8（套件登錄頁）＋ R10 |
 | `git remote` 為 `github.com` | R9（GitHub repo description／topics／homepage 與 README 簡短描述），不論 `code_type` 與有無 `web_surfaces` |
 | 兩者皆成立（例：Go library 內含 `wiki-worker/public` 文件站） | 全部；且兩邊的專案描述、關鍵字必須一致（R10） |
@@ -22,7 +22,7 @@
 
 ## R1 — Title
 
-**判準**：`title` 為空／顯示寬度 > 60（CJK 與全形字元計 2、其餘計 1，`title_length`）／同一 surface 內重複／未含主要關鍵字。
+**判準**：`title` 為空／顯示寬度 > 60（CJK 與全形字元計 2、其餘計 1，`title_length`）／同一 surface 內重複／未含主要關鍵字／**與頁面內容不符**（title 的主題詞不是該頁 h1 與正文實際在講的事）。
 
 **動作**：改寫為 `{主要關鍵字}｜{區分詞}｜{品牌}` 或 `{主要關鍵字} - {品牌}`。
 
@@ -37,17 +37,20 @@
 - 既有 title 已含關鍵字且長度合宜 → 不動。「換個寫法更順」不是理由
 - 品牌名放尾端；首頁例外可放前
 - 關鍵字只出現一次。`Scheduler - Go Scheduler - Cron Scheduler` 屬堆砌，禁止
+- **內容優先於關鍵字**：關鍵字只放進確實以它為主題的頁面。該頁內文沒有涵蓋的詞（即使熱度高、是 config 的主要關鍵字）不得寫進該頁 title；要用就先讓內容真的涵蓋，否則改放到涵蓋它的頁面或不用
+- 驗證：title 中每個主題詞（品牌名除外）都要能在該頁的 h1 或可見正文找到相同或同義的寫法；找不到的列為缺口，不能靠改 title 硬湊
 
 ---
 
 ## R2 — Meta description
 
-**判準**：缺失／顯示寬度 > 160（CJK 與全形字元計 2、其餘計 1，`description_length`）／整站同一句／與 title 完全重複。
+**判準**：缺失／顯示寬度 > 160（CJK 與全形字元計 2、其餘計 1，`description_length`）／整站同一句／與 title 完全重複／**描述了頁面上沒有的內容**（承諾的功能、資訊或答案，點進來找不到）。
 
 **動作**：寫一句描述該頁**實際內容**的句子，含主要關鍵字，說明使用者點進來會得到什麼。
 
 **邊界**：
 - description 不是排序因子，作用是點閱率與 AI 摘要素材。禁止塞關鍵字
+- description 的每個陳述都要能在該頁可見內容找到對應；寫的是「點進來會得到什麼」，不是「希望被搜到什麼」
 - 已存在且準確描述該頁 → 不動
 - 大量頁面缺 description 時，**不得**用樣板批次填同一句；改為由該頁 h1 + 首段生成各自的句子，做不到就只處理主要頁面並在報告說明未處理範圍
 
@@ -125,7 +128,7 @@
 
 **Organization 判準**：只為**實際存在**的組織產生 `Organization` 節點——公司登記名稱、有官網或 GitHub org 可對應者。地區、職能、口號等定位文字（例：「Taiwan · Infrastructure Engineering」）不是組織，放可見署名或 tagline，不得成為 `Organization` 並把作者掛為 `founder`。多語站各語言頁用該語言的正式名稱（中文頁「帕登國際有限公司」、英文頁「Pardn Co., Ltd」），另一語言放 `alternateName`，`@id` 共用。作者網站已宣告 Organization 時沿用其 `@id`。（歷史事故：go-llm-router 2026-10-02 文件站把定位文字宣告為組織，作者網站上沒有對應節點。）
 
-**日期（A10）**：`Article` / `BlogPosting` / `TechArticle` 須帶 `datePublished`，內容曾更新者帶 `dateModified`（`jsonld_date_modified == false` 即觸發），值取自 git 修改時間或**內容雜湊有變動時**的建置日期，並在頁面上可見顯示同一日期。有建置流程者由建置階段寫入：保存每頁內容雜湊與 `published`／`modified`，雜湊改變才更新 `modified`；sitemap `lastmod` 取同一值。**不得**直接用檔案 mtime 或每次建置的日期——重新產生檔案就會變動，等同內容未變卻更新日期。**禁止**內容未變動時更新日期。
+**日期（A10）**：`Article` / `BlogPosting` / `TechArticle` 須帶 `datePublished`，內容曾更新者帶 `dateModified`（`jsonld_date_modified == false` 即觸發），值取自 git 修改時間或**內容雜湊有變動時**的建置日期，並在頁面上可見顯示同一日期。有建置流程者由建置階段寫入：保存每頁內容雜湊與 `published`／`modified`，雜湊改變才更新 `modified`；雜湊涵蓋頁面原文與該頁 title／description／keywords／canonical／hreflang／JSON-LD（不含日期本身），只改 meta 或 JSON-LD 也算內容變動、須更新 `modified`（使用者 2026-10-21 指定：本 skill 改過的頁面，日期一律跟著更新）；sitemap `lastmod` 取同一值。**不得**直接用檔案 mtime 或每次建置的日期——重新產生檔案就會變動，等同內容未變卻更新日期。**禁止**內容未變動時更新日期。
 
 ---
 
@@ -243,7 +246,7 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 
 **動作**：統一為單一正式寫法，其餘位置對齊。
 
-**Person／Organization 節點的 `sameAs`**：Person `sameAs` 以 `~/.skill-readme-generate.json` 的 `same_as` 為必含清單（使用者 2026-10-02 指定：`https://pardn.io/`、`https://www.linkedin.com/in/pardnchiu`、`https://github.com/pardnchiu`、`https://dev.to/pardnchiu`、`https://x.com/pardnio`），每個站台全數放入、不得刪減，作者網站本身也在內；再與作者網站同一 `@id` 節點比對，差異列入人工後續。個人帳號放 Person、組織帳號（GitHub org）放 Organization，不混放。站外網站（作者個人網站、LinkedIn）的對應修改列入「需人工後續」。
+**Person／Organization 節點的 `sameAs`**：Person `sameAs` 以 `~/.skill-readme-generate.json` 的 `same_as` 為必含清單（使用者 2026-10-02 指定：`https://pardn.io/`、`https://www.linkedin.com/in/pardnchiu`、`https://github.com/pardnchiu`、`https://dev.to/pardnchiu`、`https://x.com/pardnchiu`），每個站台全數放入、不得刪減，作者網站本身也在內；再與作者網站同一 `@id` 節點比對，差異列入人工後續。個人帳號放 Person、組織帳號（GitHub org）放 Organization，不混放。站外網站（作者個人網站、LinkedIn）的對應修改列入「需人工後續」。
 
 **為何**：實體一致是 Tier 2 研究中少數反覆被證實有效的做法（A8）；名稱漂移會讓引擎無法把散落的提及歸戶到同一實體。
 
@@ -326,11 +329,61 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 
 ---
 
+## R15 — 網址遷移與導向
+
+**判準**（來源：`crawl_site.py` 的 `probes`、`legacy`）：
+
+| 判準 | 嚴重度 |
+|---|---|
+| 不存在的路徑回 3xx（`probes.missing_page`），尤其導回首頁 | High |
+| 不存在的路徑回 404，但頁面只有平台預設錯誤頁、沒有專案介紹與導覽 | Medium |
+| 舊網址（git 歷史推出）回 302／307，或導回首頁（`to_root`） | High |
+| 舊網址回 404，但現行站有語意對應的頁面 | Medium |
+| `http://`、結尾斜線、`.html`、`index.html` 變體回 307／302 或多跳 | Low |
+
+**動作**（每一項都列為「需使用者決策」，以 `AskUserQuestion` 逐網址確認後才套用）：
+- 不存在的路徑回 404 頁（狀態碼 404）：頁面含專案介紹（一兩句定位）、首頁連結與文件導覽，`<meta name="robots" content="noindex">`；不兜底導向首頁
+- 一頁拆成多頁：原網址以單一 301 導到其中一頁（承接原主題主體的那頁）
+- 改名或併入其他頁：舊網址以單一 301 導到語意最接近的現行頁；整理成一張對照表放在部署設定（wiki-worker 為 `redirects.json`，其他站為 worker、`_redirects`、伺服器設定），由建置或部署讀取
+- 已移除且沒有對應頁的網址：回 404 頁（wiki-worker 寫入 `removed.json`），不導回首頁
+- 網址變體統一 301 到 canonical 形式
+
+**為何**：Google 把「導回首頁」與「302 兜底」視為 soft 404，舊網址累積的訊號不會轉移；302／307 是暫時導向，Google 會繼續索引來源網址。
+
+**邊界**：
+- 對照表的對應關係須以頁面內容查證；拆分要導向哪一頁、哪些網址移除改回 404，一律由使用者決定，不自行套用（使用者 2026-10-23 指定）
+- 不為了消除 404 而把網址導到不相干的頁面；沒有對應頁就讓它回 404 頁
+- 導向由共用範本產生時（例：`wiki-generate` 的 `worker.js`），修範本而非逐站修補，並在規劃註明範本路徑
+- Cloudflare 等平台自動加上的變體導向無法改碼時，列為 Low 並說明平台限制
+
+---
+
+## R16 — 索引範圍
+
+**判準**：`crawl_site.py` 的 `composition` 中，單一非主要內容前綴（版本頁 `/released/*`、展示頁、標籤頁、分頁）占 sitemap URL ≥ 30%；或同一模板產生大量內容極少的頁面（`word_count` 低於站內中位數的 1/3）。
+
+**動作**：列為「需使用者決策」，選項如下：
+
+| 選項 | 做法 |
+|---|---|
+| 保留索引頁、單頁 noindex | 保留聚合頁（如 `/released/`）可索引，個別頁加 `<meta name="robots" content="noindex, follow">` 並移出 sitemap |
+| 只移出 sitemap | 頁面仍可被連結發現，但不主動提交 |
+| 維持現狀 | 該類頁面確實有人搜（例：版本號查詢承接得到），記錄理由 |
+
+**為何**：sitemap 是提交「希望被索引的頁面」，大量低價值頁面會稀釋爬取資源與站點品質訊號（Google build-sitemap 文件：只放想出現在搜尋結果的正式網址）。
+
+**邊界**：
+- 未經使用者確認不加 noindex（禁止動作「未經確認即改動 noindex」）
+- 不刪除頁面；本規則只決定索引與提交範圍
+
+---
+
 ## 禁止動作（違反即刪除該建議，不保留）
 
 | 反模式 | 為何禁止 |
 |---|---|
 | 關鍵字堆砌（title / description / 內文重複塞詞） | 直接觸發垃圾內容判定 |
+| title／description 與頁面內容不符（為了熱度放入該頁沒講的詞、描述頁面上不存在的功能或資訊） | 誤導點擊屬垃圾內容訊號；Google 也會改寫與內容不符的 title link，熱度詞反而不會出現 |
 | 為查詢變體大量產生近似頁面 | Google 明列為 scaled content abuse |
 | 標註頁面上不存在的內容（假 FAQ、假評分、假作者） | 結構化資料垃圾，會被人工處分 |
 | 隱藏文字、以 CSS 藏關鍵字、cloaking | 明確違規 |

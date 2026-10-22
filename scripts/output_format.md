@@ -4,7 +4,7 @@
 
 ---
 
-## 一、優化規劃 `{yyyy-MM-dd_HH-mm}-plan.md`
+## 一、優化規劃 `plan/{yyyy-MM-dd_HH-mm}.md`
 
 ```markdown
 # {project_name} SEO / AEO 優化規劃
@@ -27,7 +27,16 @@
 | web surface | {路徑與頁數；無則寫「無 web surface」} |
 | 套件登錄 | {npm / pkg.go.dev / PyPI / Packagist / 無} |
 | 正式網域 | {domain；未確認則寫「未確認」} |
-| 研究依據 | `research-{yyyy-MM-dd}.md` |
+| 研究依據 | `{網域}/research/{yyyy-MM-dd}.md`（Phase B／C）＋ `research/{yyyy-MM-dd}.md`（Phase A） |
+| 上次分析 | `plan/{yyyy-MM-dd_HH-mm}.md`／`applied/{yyyy-MM-dd_HH-mm}.md`；無則寫「首次分析」 |
+
+## 與上次分析的差異
+
+| 上次項目 | 上次狀態 | 本次狀態 |
+|---|---|---|
+| {項目} | {未套用／需人工後續／需使用者決策／已套用} | {已解決／仍存在（延續）／已回退} |
+
+首次分析寫「首次分析」，不列表。
 
 ## 優化方向
 
@@ -86,12 +95,12 @@
 
 ---
 
-## 二、執行結果 `{yyyy-MM-dd_HH-mm}-applied.md`
+## 二、執行結果 `applied/{yyyy-MM-dd_HH-mm}.md`
 
 ```markdown
 # {project_name} SEO / AEO 優化執行結果
 
-> 規劃：`{yyyy-MM-dd_HH-mm}-plan.md`
+> 規劃：`plan/{yyyy-MM-dd_HH-mm}.md`
 
 ## 已套用
 
@@ -131,8 +140,25 @@
 
 ## 落檔規則
 
-- 目錄：`{PROJECT_PATH}/.doc/seo-optimize/`，不存在時建立
-- 三種檔案：`research-{yyyy-MM-dd}.md`、`{yyyy-MM-dd_HH-mm}-plan.md`、`{yyyy-MM-dd_HH-mm}-applied.md`
-- 設定：`{PROJECT_PATH}/.doc/seo-optimize/config.json`
-- **永遠不在專案根目錄落檔**
-- 寫入後提醒使用者確認 `.doc/` 是否需加入 `.gitignore`
+所有產出集中在 skill 層 `~/.claude/skills/seo-optimize/.doc/`（下稱 `{DOC}`），不寫入專案目錄：
+
+```
+{DOC}/
+├── research/{yyyy-MM-dd}.md              # Phase A，跨網域共用
+└── {網域}/                               # 每個網域一個資料夾，子網域各自獨立
+    ├── config.json
+    ├── research/{yyyy-MM-dd}.md          # Phase B／C digest
+    ├── plan/{yyyy-MM-dd_HH-mm}.md
+    ├── applied/{yyyy-MM-dd_HH-mm}.md
+    └── analysis/                         # skill 外部產生的數據分析（GSC／GA4 等）與舊網址清單 legacy-{yyyy-MM-dd}.txt
+```
+
+| 項目 | 規則 |
+|---|---|
+| `{網域}` | 目標 hostname 的 `.` 換成 `-`：`https://pardn.io` → `pardn-io`、`https://nanomd.pardn.io` → `nanomd-pardn-io` |
+| 網域來源 | 依序：使用者給的 URL → `robots.txt` 的 `Sitemap:`、既有 canonical、`wrangler.toml`、`wiki-worker/.doc/seo/config.json` 的 `domain` → GitHub repo `homepageUrl`；有 web surface 卻都推不出 → 問使用者；無 web surface 的套件不問，用 `github-com-{owner}-{repo}` |
+| 子網域 | 目標未指定子網域時只分析 apex 網域本身，不主動分析其子網域；要分析的子網域各自一個資料夾 |
+| 一個專案多個網域 | 每個網域各寫一份 plan／applied，config 各自維護 |
+| 其他 skill 讀取 config | `/readme-generate`、`/wiki-generate`、`/update-pardn-page`、`/update-agenvoy-page` 依上列「網域來源」解析後讀 `{DOC}/{網域}/config.json` |
+
+**為何：** 報告散在各專案的 `.doc/` 時，無法跨站 review 最後分析日期；目標是 URL 而非本地專案時，也沒有 `{PROJECT_PATH}` 可以放。使用者 2026-10-23 指定此結構。

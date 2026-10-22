@@ -183,7 +183,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/trends.py --anchor "{anchor}" -
 
 ## Digest 產出
 
-Phase A 寫入 `~/.claude/skills/seo-optimize/.doc/research/{yyyy-MM-dd}.md`（有 3 日內的報告則沿用，不重跑、不重寫）；Phase B／C 寫入 `{PROJECT_PATH}/.doc/seo-optimize/research-{yyyy-MM-dd}.md`，開頭連到所用的 Phase A 報告。Phase A 報告結構如下：
+Phase A 寫入 `~/.claude/skills/seo-optimize/.doc/research/{yyyy-MM-dd}.md`（有 3 日內的報告則沿用，不重跑、不重寫）；Phase B／C 寫入 `~/.claude/skills/seo-optimize/.doc/{網域}/research/{yyyy-MM-dd}.md`（`{網域}` 規則見 output_format.md「落檔規則」），開頭連到所用的 Phase A 報告。Phase A 報告結構如下：
 
 ```markdown
 # SEO / AEO 研究摘要（{yyyy-MM-dd}）

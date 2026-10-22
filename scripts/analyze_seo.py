@@ -12,6 +12,7 @@ absent, never inferred.
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import sys
@@ -234,7 +235,7 @@ def _collect_meta(content: str, page: PageInfo) -> None:
         if not key:
             continue
         if key == "description":
-            page.description = value
+            page.description = html.unescape(value)
         elif key in VERIFICATION_META:
             page.site_verification.append(VERIFICATION_META[key])
         elif key == "robots":
@@ -281,10 +282,13 @@ def parse_html(path: Path, rel: str) -> PageInfo | None:
     content = _read(path)
     if content is None:
         return None
+    return parse_html_text(content, rel)
 
+
+def parse_html_text(content: str, rel: str) -> PageInfo:
     page = PageInfo(path=rel)
     if m := TITLE_RE.search(content):
-        page.title = _strip_tags(m.group(1)).strip()
+        page.title = html.unescape(_strip_tags(m.group(1)).strip())
         page.title_length = sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in page.title)
     if m := HTML_LANG_RE.search(content):
         page.lang = m.group(1)
@@ -570,9 +574,6 @@ def analyze(root_path: str) -> dict:
         "pages": [asdict(p) for p in pages[:200]],
         "content_count": len(contents),
         "contents": [asdict(c) for c in contents[:200]],
-        "existing_config": str((root / ".doc" / "seo-optimize" / "config.json"))
-        if (root / ".doc" / "seo-optimize" / "config.json").exists()
-        else "",
     }
 
 

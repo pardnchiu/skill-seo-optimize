@@ -2,10 +2,16 @@
 
 完整規範以 `SKILL.md` 與 `scripts/` 為準（＝最新規範）；本檔只用於快速定位先前執行本 skill 套用到專案的 SEO 變更（meta、JSON-LD、robots.txt、sitemap、`_headers`、llms.txt、建置腳本等）與最新規範的差異，命中即直接修改。
 
-最新改動：2026-10-21
+最新改動：2026-10-23
 
 ## 破壞性變更
 
+- title／description 含該頁內文沒涵蓋的關鍵字（為熱度放入），或描述頁面上不存在的內容 → 改回描述該頁實際內容；熱度詞移到真正涵蓋它的頁面或先補內容（R1、R2）
+- 部署設定把 404 兜底導向首頁（例：worker `if (response.status !== 404) return response; return Response.redirect("/", 302)`）、或已刪頁面以 302／307 導回首頁 → 不存在路徑回含專案介紹的 404 頁（狀態碼 404），拆分頁的原網址 301 到其中一頁、移除的網址回 404 頁，逐網址經使用者同意後套用（R15）
+- config `keyword_volume` 無 `terms` → Step 3.2 重量主要關鍵字並寫入 `terms`，供熱度下滑判斷
+- 產出寫在 `{PROJECT_PATH}/.doc/seo-optimize/`（config.json、`research-{date}.md`、plan、applied）→ 搬到 `~/.claude/skills/seo-optimize/.doc/{網域}/`：`config.json`、`research/{date}.md`、`plan/{ts}.md`、`applied/{ts}.md`；專案內的 `.doc/seo-optimize/` 刪除（規則見 output_format.md「落檔規則」）
+
+- 內容雜湊只算頁面原文、改 title／description／keywords／JSON-LD 不更新 `dateModified`／`lastmod` → 雜湊納入該頁 meta 與不含日期的 JSON-LD（wiki-generate 範本 6.1.0 已內建）
 - 有 web surface 但未產生 llms.txt（舊判準僅 agent-facing 文件）、或因頁數 ≤ 5／單一 surface 未建 sitemap、robots.txt → 依 R7 全部補上
 - 既有頁面內文未點名競品，或競品少於 3 個、未依熱度選出 → 依 Phase B-4 重定競品（至少 3 個），在每個語言版本內文加入關聯／差異／特點段落
 - 次要關鍵字含冷僻詞（avg、recent12w、recent4w 皆 < 1）→ 移除或換成較高熱度寫法並詢問，連帶重評 `one_liner` 與 topics
