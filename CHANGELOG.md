@@ -2,7 +2,7 @@
 
 完整規範以 `SKILL.md` 與 `scripts/` 為準（＝最新規範）；本檔只用於快速定位先前執行本 skill 套用到專案的 SEO 變更（meta、JSON-LD、robots.txt、sitemap、`_headers`、llms.txt、建置腳本等）與最新規範的差異，命中即直接修改。
 
-最新改動：2026-10-23
+最新改動：2026-10-25
 
 ## 破壞性變更
 

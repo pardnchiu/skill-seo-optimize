@@ -144,7 +144,8 @@
 | 有 robots.txt 但無 `Sitemap:` 指令且 sitemap 存在 | 補指令 | Low |
 | 使用者明確表示要退出 AI 訓練 | 逐一列出訓練型 bot（見 A5 表），**不得**用 `*` | — |
 | robots.txt 封鎖使用者觸發型 fetcher（`Google-Agent`、`ChatGPT-User`、`Perplexity-User`） | 告知該規則無效（這些 fetcher 忽略 robots.txt，見 A5）；實際需要阻擋者改在 CDN / WAF 層處理 | Low |
-| 使用者想退出 AI Overviews 而封鎖 `Google-Extended` | 告知 `Google-Extended` 不影響 AI Overviews / AI Mode，並說明 `nosnippet` 系列的代價（A5） | — |
+| 使用者想退出 AI Overviews 而封鎖 `Google-Extended` | 告知 `Google-Extended` 不影響 AI Overviews / AI Mode；可退出的途徑是 Search Console「Search generative AI」property 層級開關（使用者手動設定，列入「需人工後續」）或 `nosnippet` 系列（同時移除一般摘要），說明兩者代價（A5） | — |
+| 新產生的 robots.txt 規則路徑含非 ASCII 字元 | 以 percent-encoded 形式書寫（`/foo/%E3%83%84`）；Google 兩者等價，編碼後第三方工具較易處理（A5，robots-txt-spec 2026-10-23） | — |
 
 ### R7.2 sitemap.xml
 

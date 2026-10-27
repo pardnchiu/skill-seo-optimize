@@ -109,8 +109,10 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 | 使用者否決或列入「不執行項目」 | 狀態沒變就不再提出；狀態有變才重提並說明變了什麼 |
 | 已套用項目 | 抽查仍在線上生效；被覆蓋或回退的列為缺口 |
 | 資料夾不存在或沒有 plan | 首次分析，規劃的差異段寫「首次分析」 |
+| config 的 `last_optimized` 距今 < 28 天 | 規劃盤點標「觀察期不足（N 天）」；上次套用項目只驗證是否仍生效，不以排名、曝光、點擊、AI 引用的變化判斷成效，也不因此提出回退或改寫 |
+| `last_optimized` 距今 ≥ 28 天 | `analysis/` 或 GSC／GA4 數據以 `last_optimized` 為切點比較前後同長度區間，結論記入規劃的「與上次分析的差異」 |
 
-**為何：** 不讀上次結論，每次都會從零重列同一批項目、重問使用者已經否決的決策，也看不出上次的待辦有沒有真的完成。
+**為何：** 不讀上次結論，每次都會從零重列同一批項目、重問使用者已經否決的決策，也看不出上次的待辦有沒有真的完成。距上次優化太短時，重新索引與 GSC 數據尚未反映改動，據此判斷成效會把未生效誤讀成無效而反覆改寫。
 
 ### 盤點
 
@@ -281,6 +283,8 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
   "has_physical_location": false,
   "domain": "https://pardn.io/go-scheduler",
   "keyword_research": "2026-10-06",
+  "last_analyzed": "2026-10-21",
+  "last_optimized": "2026-10-07",
   "keyword_volume": {"checked": "2026-10-06", "anchor": "golang", "geo": ["WW", "TW"], "terms": {"go scheduler": {"geo": "WW", "avg": 3.1, "recent12w": 3.4, "recent4w": 3.0}}},
   "competitors": [{"name": "robfig/cron", "type": "same"}],
   "one_liner": {
@@ -293,6 +297,8 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 `one_liner` 由 Step 4 依 R9 設計，是 README 簡短描述（`/readme-generate` 順序 3）、GitHub repo description 與 topics 的單一來源。
 
 `keyword_research` 為關鍵字依 Phase B 競品研究設計的日期，對應 digest 檔名；要重新研究時帶 `--reset`。`keyword_volume` 記 Step 3.2 複查的日期、anchor、geo 與每個主要關鍵字的量測值（`terms`，供 Step 2.5 判斷熱度下滑）；`competitors` 記 B-4 的競品與同型（`same`）／異型（`opposite`）。
+
+`last_analyzed` 為最新一份 plan 的日期，Step 4 產出 plan 時更新；`last_optimized` 為最新一份「已套用」非「無」的 applied 日期，Step 6 產出 applied 時更新，零套用不更新。兩者供 Step 2 判斷觀察期與跨網域 review。
 
 `locales` 依專案實際存在的語言版本填寫；`locale_policy` 與 `engines` 為固定值，不因專案而異。
 
@@ -321,7 +327,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 
 **為何：** 規劃的順序就是動手的順序；過時參數投入再多也不影響結果，放前面只會排擠真正有效的項目。
 
-再依 [`scripts/optimization_rules.md`](scripts/optimization_rules.md) 逐條比對分析結果，產出 `~/.claude/skills/seo-optimize/.doc/{網域}/plan/{yyyy-MM-dd_HH-mm}.md`（格式見 [`scripts/output_format.md`](scripts/output_format.md)）。
+再依 [`scripts/optimization_rules.md`](scripts/optimization_rules.md) 逐條比對分析結果，產出 `~/.claude/skills/seo-optimize/.doc/{網域}/plan/{yyyy-MM-dd_HH-mm}.md`（格式見 [`scripts/output_format.md`](scripts/output_format.md)），並把 config 的 `last_analyzed` 更新為本次日期。
 
 **產出後必須向使用者呈現摘要並取得明確確認才進入 Step 5。**規劃會修改專案檔案，屬不易還原的動作。
 
@@ -352,6 +358,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 
 - [ ] Step 1 研究報告為 3 日內生成（本次執行或沿用）且含實抓的 Tier 1 來源；網域 digest 已落檔並連到該報告
 - [ ] 已讀 `{網域}/` 最新的 plan／applied，上次的未套用、需人工後續、需使用者決策項目都已重驗，並記在規劃的「與上次分析的差異」
+- [ ] config 的 `last_analyzed` 為本次 plan 日期；本次「已套用」非「無」時 `last_optimized` 為本次日期，否則維持原值
 - [ ] 所有產出都在 `~/.claude/skills/seo-optimize/.doc/{網域}/`，專案目錄內沒有新增 `.doc/seo-optimize/`
 - [ ] 有部署網域者已跑 `crawl_site.py`：`probes` 與 `legacy` 的 3xx／`to_root` 已列入 R15，`composition` 超過門檻者已列入 R16；舊網址清單由 git 歷史推出（推不出者標未確認）
 - [ ] 關鍵字研究未逾 90 天、主要關鍵字熱度未下滑；否則已重跑 Phase B；跨網域重疊已標示並由使用者決定

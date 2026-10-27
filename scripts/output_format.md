@@ -29,6 +29,7 @@
 | 正式網域 | {domain；未確認則寫「未確認」} |
 | 研究依據 | `{網域}/research/{yyyy-MM-dd}.md`（Phase B／C）＋ `research/{yyyy-MM-dd}.md`（Phase A） |
 | 上次分析 | `plan/{yyyy-MM-dd_HH-mm}.md`／`applied/{yyyy-MM-dd_HH-mm}.md`；無則寫「首次分析」 |
+| 距上次優化 | `last_optimized` 與距今天數；< 28 天加註「觀察期不足」；無則寫「未曾套用」 |
 
 ## 與上次分析的差異
 
@@ -146,7 +147,7 @@
 {DOC}/
 ├── research/{yyyy-MM-dd}.md              # Phase A，跨網域共用
 └── {網域}/                               # 每個網域一個資料夾，子網域各自獨立
-    ├── config.json
+    ├── config.json                       # 含 last_analyzed／last_optimized
     ├── research/{yyyy-MM-dd}.md          # Phase B／C digest
     ├── plan/{yyyy-MM-dd_HH-mm}.md
     ├── applied/{yyyy-MM-dd_HH-mm}.md
