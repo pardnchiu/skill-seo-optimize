@@ -46,7 +46,7 @@ On the first run, Step 3 asks for the targets and writes them to `{PROJECT_PATH}
   "locale_policy": "per-language-full",
   "engines": ["google", "google-ai", "chatgpt", "perplexity", "claude"],
   "has_physical_location": false,
-  "domain": "https://pardn.io/go-scheduler"
+  "domain": "https://example.com"
 }
 ```
 
@@ -230,5 +230,5 @@ CJK text is counted per character and Latin text per word. `csr_shell` is `true`
 | Changes outside the plan | Never made |
 | Items marked "needs user decision" | Untouched until answered |
 | `gh repo edit` | Listed for the user to run |
-| README managed by `/readme-generate` | Only the suggested order-3 description change is reported; structure untouched |
+| README managed by a generator | Only the suggested short-description change is reported; structure untouched |
 | git | No `commit` / `push` / `tag` |

@@ -395,7 +395,7 @@ def group_web_surfaces(pages: list[PageInfo], framework: str) -> list[dict]:
     """
     Group HTML pages into servable sites.
 
-    A repo can hold several at once — e.g. a Go library whose `wiki-worker/public/`
+    A repo can hold several at once — e.g. a Go library whose `docs/public/`
     is a deployed docs site. Each surface gets optimized on its own terms, so they
     must not be collapsed into a single project type.
     """

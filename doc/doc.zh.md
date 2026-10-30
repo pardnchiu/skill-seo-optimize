@@ -46,7 +46,7 @@ python3 <skills-dir>/seo-optimize/scripts/analyze_seo.py . > /dev/null && echo o
   "locale_policy": "per-language-full",
   "engines": ["google", "google-ai", "chatgpt", "perplexity", "claude"],
   "has_physical_location": false,
-  "domain": "https://pardn.io/go-scheduler"
+  "domain": "https://example.com"
 }
 ```
 
@@ -230,5 +230,5 @@ CJK 字數以字元個數計算，拉丁文字以單字計算。`csr_shell` 為 
 | 規劃外的修改 | 一律不做 |
 | 標為「需使用者決策」的項目 | 未獲答覆前不動 |
 | `gh repo edit` | 只列指令，由使用者執行 |
-| 由 `/readme-generate` 管理的 README | 只回報順序 3 描述的調整建議，不改寫結構 |
+| 由產生器管理的 README | 只回報簡短描述的調整建議，不改寫結構 |
 | git | 不執行 `commit`／`push`／`tag` |

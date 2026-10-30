@@ -141,10 +141,11 @@
 
 ## 落檔規則
 
-所有產出集中在 skill 層 `~/.claude/skills/seo-optimize/.doc/`（下稱 `{DOC}`），不寫入專案目錄：
+所有產出集中在 skill 層 `{skill_dir}/.doc/`（下稱 `{DOC}`），不寫入專案目錄：
 
 ```
 {DOC}/
+├── author.json                           # author_name／author_url／same_as，R10 Person 必含清單，跨網域共用
 ├── research/{yyyy-MM-dd}.md              # Phase A，跨網域共用
 └── {網域}/                               # 每個網域一個資料夾，子網域各自獨立
     ├── config.json                       # 含 last_analyzed／last_optimized
@@ -156,10 +157,9 @@
 
 | 項目 | 規則 |
 |---|---|
-| `{網域}` | 目標 hostname 的 `.` 換成 `-`：`https://pardn.io` → `pardn-io`、`https://nanomd.pardn.io` → `nanomd-pardn-io` |
-| 網域來源 | 依序：使用者給的 URL → `robots.txt` 的 `Sitemap:`、既有 canonical、`wrangler.toml`、`wiki-worker/.doc/seo/config.json` 的 `domain` → GitHub repo `homepageUrl`；有 web surface 卻都推不出 → 問使用者；無 web surface 的套件不問，用 `github-com-{owner}-{repo}` |
+| `{網域}` | 目標 hostname 的 `.` 換成 `-`：`https://example.com` → `example-com`、`https://docs.example.com` → `docs-example-com` |
+| 網域來源 | 依序：使用者給的 URL → `robots.txt` 的 `Sitemap:`、既有 canonical、`wrangler.toml` → GitHub repo `homepageUrl`；有 web surface 卻都推不出 → 問使用者；無 web surface 的套件不問，用 `github-com-{owner}-{repo}` |
 | 子網域 | 目標未指定子網域時只分析 apex 網域本身，不主動分析其子網域；要分析的子網域各自一個資料夾 |
 | 一個專案多個網域 | 每個網域各寫一份 plan／applied，config 各自維護 |
-| 其他 skill 讀取 config | `/readme-generate`、`/wiki-generate`、`/update-pardn-page`、`/update-agenvoy-page` 依上列「網域來源」解析後讀 `{DOC}/{網域}/config.json` |
 
 **為何：** 報告散在各專案的 `.doc/` 時，無法跨站 review 最後分析日期；目標是 URL 而非本地專案時，也沒有 `{PROJECT_PATH}` 可以放。使用者 2026-10-23 指定此結構。

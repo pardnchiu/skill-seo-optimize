@@ -15,7 +15,7 @@
 | `web_surfaces` 非空 | R1–R6（頁面層）＋ R7（爬蟲指令）＋ R10（實體一致性）＋ R11（初始 HTML）＋ R12（索引提交）＋ R13（AI 使用偏好宣告）＋ R14（Favicon）＋ R15（網址遷移與導向）＋ R16（索引範圍） |
 | `code_type` ∈ {library, cli} | R8（套件登錄頁）＋ R10 |
 | `git remote` 為 `github.com` | R9（GitHub repo description／topics／homepage 與 README 簡短描述），不論 `code_type` 與有無 `web_surfaces` |
-| 兩者皆成立（例：Go library 內含 `wiki-worker/public` 文件站） | 全部；且兩邊的專案描述、關鍵字必須一致（R10） |
+| 兩者皆成立（例：Go library 內含文件站） | 全部；且兩邊的專案描述、關鍵字必須一致（R10） |
 | `web_surfaces` 為空且 `code_type` ∈ {library, cli} | **明確告知使用者本專案無 web SEO surface**，僅執行 R8、R10（GitHub repo 另執行 R9）。禁止虛構頁面來套用 R1–R7 |
 
 ---
@@ -30,12 +30,12 @@
 <!-- before -->
 <title>Documentation</title>
 <!-- after -->
-<title>Scheduler API Reference - go-scheduler</title>
+<title>Scheduler API Reference | my-scheduler</title>
 ```
 
 **邊界**：
 - 既有 title 已含關鍵字且長度合宜 → 不動。「換個寫法更順」不是理由
-- 品牌名放尾端；首頁例外可放前
+- 品牌名放尾端，以 ` | `（ZH 用 `｜`）分隔；不帶 `{owner}/` 等帳號前綴
 - 關鍵字只出現一次。`Scheduler - Go Scheduler - Cron Scheduler` 屬堆砌，禁止
 - **內容優先於關鍵字**：關鍵字只放進確實以它為主題的頁面。該頁內文沒有涵蓋的詞（即使熱度高、是 config 的主要關鍵字）不得寫進該頁 title；要用就先讓內容真的涵蓋，否則改放到涵蓋它的頁面或不用
 - 驗證：title 中每個主題詞（品牌名除外）都要能在該頁的 h1 或可見正文找到相同或同義的寫法；找不到的列為缺口，不能靠改 title 硬湊
@@ -126,7 +126,7 @@
 - `SoftwareApplication` 的 rich result 須有 `offers.price`（免費填 `0`）與真實的 `aggregateRating` 或 `review`（A2）；沒有真實評分／評論者仍可標註，理由寫「實體理解」，不得補評分求資格
 - 既有標註正確 → 不動
 
-**Organization 判準**：只為**實際存在**的組織產生 `Organization` 節點——公司登記名稱、有官網或 GitHub org 可對應者。地區、職能、口號等定位文字（例：「Taiwan · Infrastructure Engineering」）不是組織，放可見署名或 tagline，不得成為 `Organization` 並把作者掛為 `founder`。多語站各語言頁用該語言的正式名稱（中文頁「帕登國際有限公司」、英文頁「Pardn Co., Ltd」），另一語言放 `alternateName`，`@id` 共用。作者網站已宣告 Organization 時沿用其 `@id`。（歷史事故：go-llm-router 2026-10-02 文件站把定位文字宣告為組織，作者網站上沒有對應節點。）
+**Organization 判準**：只為**實際存在**的組織產生 `Organization` 節點——公司登記名稱、有官網或 GitHub org 可對應者。地區、職能、口號等定位文字（例：「City · Software Engineering」）不是組織，放可見署名或 tagline，不得成為 `Organization` 並把作者掛為 `founder`。多語站各語言頁用該語言的正式名稱（例：中文頁用中文登記名、英文頁用英文登記名），另一語言放 `alternateName`，`@id` 共用。作者網站已宣告 Organization 時沿用其 `@id`。（歷史事故：曾有文件站把定位文字宣告為組織，作者網站上沒有對應節點。）
 
 **日期（A10）**：`Article` / `BlogPosting` / `TechArticle` 須帶 `datePublished`，內容曾更新者帶 `dateModified`（`jsonld_date_modified == false` 即觸發），值取自 git 修改時間或**內容雜湊有變動時**的建置日期，並在頁面上可見顯示同一日期。有建置流程者由建置階段寫入：保存每頁內容雜湊與 `published`／`modified`，雜湊改變才更新 `modified`；雜湊涵蓋頁面原文與該頁 title／description／keywords／canonical／hreflang／JSON-LD（不含日期本身），只改 meta 或 JSON-LD 也算內容變動、須更新 `modified`（使用者 2026-10-21 指定：本 skill 改過的頁面，日期一律跟著更新）；sitemap `lastmod` 取同一值。**不得**直接用檔案 mtime 或每次建置的日期——重新產生檔案就會變動，等同內容未變卻更新日期。**禁止**內容未變動時更新日期。
 
@@ -181,7 +181,7 @@
 
 **邊界**：
 - 任何情況下**不得**宣稱 llms.txt 會提升搜尋或 AI 可見度
-- **不得因為「它不影響排名」就在規劃中略過本規則**：`analyze_seo.py` 的 `crawler_directives.llms_txt` 已回報其有無，判準成立時它就是一個待執行項，不是可選的加分題。（歷史事故：Agenvoy-page 一次執行中，llms.txt 因被歸類為「非文字改動」而在套用階段被整項跳過，使用者事後才發現漏掉。）
+- **不得因為「它不影響排名」就在規劃中略過本規則**：`analyze_seo.py` 的 `crawler_directives.llms_txt` 已回報其有無，判準成立時它就是一個待執行項，不是可選的加分題。（歷史事故：曾有一次執行中，llms.txt 因被歸類為「非文字改動」而在套用階段被整項跳過，使用者事後才發現漏掉。）
 
 ---
 
@@ -210,16 +210,16 @@ GitHub repo 頁是與網站並列的搜尋面（「X alternative」類查詢結�
 
 | 欄位 | 通過條件 |
 |---|---|
-| description | 等於 config `one_liner.en`（保留既有類型前綴，如 `(module)`，`/update-pardn-page` 依此分類） |
+| description | 等於 config `one_liner.en`（保留既有類型前綴，如 `(module)`） |
 | topics | 涵蓋主要關鍵字對應的 GitHub topic（小寫連字號，如 `self-hosted`），GitHub 上限 20 個；每個 topic 的使用 repo 數 ≥ 1,000 |
 | homepage | 等於 config `domain`（有網站時） |
-| README 簡短描述 | `/readme-generate` 順序 3 的 blockquote，EN／ZH 分別等於 `one_liner.en`／`one_liner.zh` |
+| README 簡短描述 | README h1 下方第一個 blockquote，EN／ZH 分別等於 `one_liner.en`／`one_liner.zh` |
 
 **定位句 `one_liner`**：description、README 簡短描述與 topics 的單一來源，寫入 config。
 
 | 欄位 | 條件 |
 |---|---|
-| `one_liner.en` | `/readme-generate` 順序 3 固定格式 `A [tech] [what it is] with [f1], [f2], and [f3]`，≤ 20 個英文單字，句尾無句號；含 config 主要關鍵字至少一個；與網站首頁 description 同一定位 |
+| `one_liner.en` | 固定格式 `A [tech] [what it is] with [f1], [f2], and [f3]`，≤ 20 個英文單字，句尾無句號；含 config 主要關鍵字至少一個；與網站首頁 description 同一定位 |
 | `one_liner.zh` | 同結構以中文撰寫（約 20–26 字），含 ZH 主要關鍵字至少一個，非逐字翻譯 |
 | topics | 由同一組主要／次要關鍵字推導；候選取自 research digest「競品研究」中高星同類 repo 的 topics |
 
@@ -228,10 +228,10 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 **動作**：
 - description／topics／homepage 不通過 → 組出單一 `gh repo edit` 指令（`--description`、`--add-topic`、`--homepage`；要移除已偏離定位的 topic 才加 `--remove-topic`），以 `AskUserQuestion` 附完整指令與「現況 → 新值」對照詢問是否更新
 - 使用者同意 → 直接執行，再跑一次 `gh repo view` 確認三個欄位已生效；否決 → 指令列入「需人工後續」
-- README 簡短描述不等於 `one_liner` → 只替換 `README.md` 與中文 README（`README.zh.md` 或 `doc/README.zh.md`）順序 3 的那一行 blockquote，其餘內容不動
+- README 簡短描述不等於 `one_liner` → 只替換 `README.md` 與中文 README（`README.zh.md` 或 `doc/README.zh.md`）的簡短描述那一行 blockquote，其餘內容不動
 
 **邊界**：
-- README 由 `/readme-generate` 管理時，只動順序 3 那一行；`/readme-generate` 順序 3 讀同一個 `one_liner`，兩個 skill 產出一致。結構與其他段落的建議只回報，交由 readme-generate 重生成
+- README 由產生器管理時，簡短描述列「交由呼叫方」並附 `one_liner`，不直接改；結構與其他段落的建議只回報，交由產生器重生成
 - `gh repo edit` 改的是公開的遠端狀態：未經該次 `AskUserQuestion` 同意不得執行；同意只涵蓋問題中列出的那一條指令
 - 每個候選 topic 先以 `gh api "search/repositories?q=topic:{topic}&per_page=1" -q .total_count` 查使用 repo 數（逐一查詢間隔 2 秒，避開 search API 每分鐘 30 次限制）：< 1,000 不加；同義詞擇使用數最多的一個（`self-hosted` 40k 優於 `selfhosted` 2k）。詢問時預覽列出每個 topic 的使用數；既有 topic 低於門檻者列為移除候選一併詢問，不自行移除
 - topic 的社群語意要與專案相符，不只看字面：查該 topic 頁前幾名 repo 的性質，不同就不加
@@ -247,12 +247,12 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 
 **動作**：統一為單一正式寫法，其餘位置對齊。
 
-**Person／Organization 節點的 `sameAs`**：Person `sameAs` 以 `~/.skill-readme-generate.json` 的 `same_as` 為必含清單（使用者 2026-10-02 指定：`https://pardn.io/`、`https://www.linkedin.com/in/pardnchiu`、`https://github.com/pardnchiu`、`https://dev.to/pardnchiu`、`https://x.com/pardnchiu`），每個站台全數放入、不得刪減，作者網站本身也在內；再與作者網站同一 `@id` 節點比對，差異列入人工後續。個人帳號放 Person、組織帳號（GitHub org）放 Organization，不混放。站外網站（作者個人網站、LinkedIn）的對應修改列入「需人工後續」。
+**Person／Organization 節點的 `sameAs`**：Person `sameAs` 以 `{skill_dir}/.doc/author.json` 的 `same_as` 為必含清單（不存在時以 `AskUserQuestion` 詢問 `author_name`、`author_url`、`same_as` 一次並寫入）（使用者 2026-10-02 指定），每個站台全數放入、不得刪減，作者網站本身也在內；再與作者網站同一 `@id` 節點比對，差異列入人工後續。個人帳號放 Person、組織帳號（GitHub org）放 Organization，不混放。站外網站（作者個人網站、LinkedIn）的對應修改列入「需人工後續」。
 
 **為何**：實體一致是 Tier 2 研究中少數反覆被證實有效的做法（A8）；名稱漂移會讓引擎無法把散落的提及歸戶到同一實體。
 
 **邊界**：
-- 大小寫與連字號差異（`go-scheduler` vs `Go Scheduler`）若分屬「套件識別碼」與「展示名稱」兩種用途，屬合理差異，不強制統一；真正要抓的是三種以上互不對應的寫法
+- 大小寫與連字號差異（`my-scheduler` vs `My Scheduler`）若分屬「套件識別碼」與「展示名稱」兩種用途，屬合理差異，不強制統一；真正要抓的是三種以上互不對應的寫法
 - 站外品牌提及（YouTube、Reddit、第三方評測）與 AI 可見度高度相關（A8），但無法由修改檔案達成，只列入「需人工後續」
 
 ---
@@ -345,8 +345,8 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 **動作**（每一項都列為「需使用者決策」，以 `AskUserQuestion` 逐網址確認後才套用）：
 - 不存在的路徑回 404 頁（狀態碼 404）：頁面含專案介紹（一兩句定位）、首頁連結與文件導覽，`<meta name="robots" content="noindex">`；不兜底導向首頁
 - 一頁拆成多頁：原網址以單一 301 導到其中一頁（承接原主題主體的那頁）
-- 改名或併入其他頁：舊網址以單一 301 導到語意最接近的現行頁；整理成一張對照表放在部署設定（wiki-worker 為 `redirects.json`，其他站為 worker、`_redirects`、伺服器設定），由建置或部署讀取
-- 已移除且沒有對應頁的網址：回 404 頁（wiki-worker 寫入 `removed.json`），不導回首頁
+- 改名或併入其他頁：舊網址以單一 301 導到語意最接近的現行頁；整理成一張對照表放在部署設定（worker、`_redirects`、伺服器設定或其讀取的對照檔），由建置或部署讀取
+- 已移除且沒有對應頁的網址：回 404 頁，不導回首頁
 - 網址變體統一 301 到 canonical 形式
 
 **為何**：Google 把「導回首頁」與「302 兜底」視為 soft 404，舊網址累積的訊號不會轉移；302／307 是暫時導向，Google 會繼續索引來源網址。
@@ -354,14 +354,14 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 **邊界**：
 - 對照表的對應關係須以頁面內容查證；拆分要導向哪一頁、哪些網址移除改回 404，一律由使用者決定，不自行套用（使用者 2026-10-23 指定）
 - 不為了消除 404 而把網址導到不相干的頁面；沒有對應頁就讓它回 404 頁
-- 導向由共用範本產生時（例：`wiki-generate` 的 `worker.js`），修範本而非逐站修補，並在規劃註明範本路徑
+- 導向由共用範本產生時，修範本而非逐站修補，並在規劃註明範本路徑
 - Cloudflare 等平台自動加上的變體導向無法改碼時，列為 Low 並說明平台限制
 
 ---
 
 ## R16 — 索引範圍
 
-**判準**：`crawl_site.py` 的 `composition` 中，單一非主要內容前綴（版本頁 `/released/*`、展示頁、標籤頁、分頁）占 sitemap URL ≥ 30%；或同一模板產生大量內容極少的頁面（`word_count` 低於站內中位數的 1/3）。
+**判準**：`crawl_site.py` 的 `composition` 中，單一非主要內容前綴（版本頁 `/released/*`、展示頁、標籤頁、分頁）占 sitemap URL ≥ 30%；或同一模板產生大量內容極少的頁面（`word_count` 低於站內中位數的 1/3）；或站台讓使用者產生供直接分享、協作或工具用途的頁面（分享連結頁、生成結果頁、互動工具輸出頁）且可被索引或列入 sitemap。
 
 **動作**：列為「需使用者決策」，選項如下：
 
@@ -371,7 +371,7 @@ config 已有 `one_liner` 且仍符合條件 → 沿用；不符或缺 → 重�
 | 只移出 sitemap | 頁面仍可被連結發現，但不主動提交 |
 | 維持現狀 | 該類頁面確實有人搜（例：版本號查詢承接得到），記錄理由 |
 
-**為何**：sitemap 是提交「希望被索引的頁面」，大量低價值頁面會稀釋爬取資源與站點品質訊號（Google build-sitemap 文件：只放想出現在搜尋結果的正式網址）。
+**為何**：sitemap 是提交「希望被索引的頁面」，大量低價值頁面會稀釋爬取資源與站點品質訊號（Google build-sitemap 文件：只放想出現在搜尋結果的正式網址）。使用者產生的分享／生成／工具頁，Google 建議預設以 noindex（robots meta 或 `X-Robots-Tag`）或 robots.txt 阻擋，只索引為搜尋而做的內容（`developers.google.com/search/docs/monitor-debug/prevent-abuse`「Only index content meant for Search」，Last updated 2026-10-26）。
 
 **邊界**：
 - 未經使用者確認不加 noindex（禁止動作「未經確認即改動 noindex」）

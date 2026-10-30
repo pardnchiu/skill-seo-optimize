@@ -80,7 +80,7 @@
 |---|---|
 | 與 A12 相同 | digest 記「無變動」 |
 | 版號／日期更新但階段未變（仍為 draft） | 更新 A12，不改規則 |
-| 進入可實作門檻：成為 RFC、W3C Recommendation、IANA permanent，或主要廠商官方頁宣告支援 | 更新 A12、在 optimization_rules 新增或修改規則；適用於本專案者列入規劃；有範本的 skill 同步改範本並升版 |
+| 進入可實作門檻：成為 RFC、W3C Recommendation、IANA permanent，或主要廠商官方頁宣告支援 | 更新 A12、在 optimization_rules 新增或修改規則；適用於本專案者列入規劃；由共用範本產生者列為改範本 |
 | 語法或路徑改變（如 header 名、檔案路徑） | 已實作者列為 High 修正項，範本同步 |
 | 被撤回、Replaced、或廠商宣告不支援 | 更新 A12；已實作者列為可移除項 |
 
@@ -136,7 +136,7 @@ Tier 3/4 的主張與 Tier 1 衝突時：
 以 `scripts/trends.py` 量 Google Trends 相對熱度，候選詞包含：B-4 收集的每個詞（逐詞都量）、seed、本專案能力詞。同一次量測用同一個 anchor（選中等熱度、與專案直接相關的詞），跨批次才可比較。
 
 ```bash
-python3 -I ~/.claude/skills/seo-optimize/scripts/trends.py --anchor "{anchor}" --geo {GEO,...} --hl {hl} "{term1}" "{term2}" ...
+python3 -I {skill_dir}/scripts/trends.py --anchor "{anchor}" --geo {GEO,...} --hl {hl} "{term1}" "{term2}" ...
 ```
 
 | 邊界 | 規則 |
@@ -183,7 +183,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/trends.py --anchor "{anchor}" -
 
 ## Digest 產出
 
-Phase A 寫入 `~/.claude/skills/seo-optimize/.doc/research/{yyyy-MM-dd}.md`（有 3 日內的報告則沿用，不重跑、不重寫）；Phase B／C 寫入 `~/.claude/skills/seo-optimize/.doc/{網域}/research/{yyyy-MM-dd}.md`（`{網域}` 規則見 output_format.md「落檔規則」），開頭連到所用的 Phase A 報告。Phase A 報告結構如下：
+Phase A 寫入 `{skill_dir}/.doc/research/{yyyy-MM-dd}.md`（有 3 日內的報告則沿用，不重跑、不重寫）；Phase B／C 寫入 `{skill_dir}/.doc/{網域}/research/{yyyy-MM-dd}.md`（`{網域}` 規則見 output_format.md「落檔規則」），開頭連到所用的 Phase A 報告。Phase A 報告結構如下：
 
 ```markdown
 # SEO / AEO 研究摘要（{yyyy-MM-dd}）

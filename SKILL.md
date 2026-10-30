@@ -19,9 +19,11 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 |-----------|---------|-------------|
 | `PROJECT_PATH` | 當前目錄 | 專案根目錄 |
 | `--plan` | — | 只產出優化規劃，不修改任何檔案 |
-| `--reset` | — | 清除 `~/.claude/skills/seo-optimize/.doc/{網域}/config.json`，重新詢問關鍵字 |
+| `--reset` | — | 清除 `{skill_dir}/.doc/{網域}/config.json`，重新詢問關鍵字 |
 
-所有產出（研究、config、plan、applied）集中在 `~/.claude/skills/seo-optimize/.doc/`，依網域分資料夾，不寫入專案目錄；結構與 `{網域}` 解析見 [`scripts/output_format.md`](scripts/output_format.md)「落檔規則」。目標未指定子網域時只分析 apex 網域本身。
+`{skill_dir}` 為本 `SKILL.md` 所在目錄的絕對路徑，依當前執行環境實際載入位置代入。
+
+所有產出（研究、config、plan、applied）集中在 `{skill_dir}/.doc/`，依網域分資料夾，不寫入專案目錄；結構與 `{網域}` 解析見 [`scripts/output_format.md`](scripts/output_format.md)「落檔規則」。目標未指定子網域時只分析 apex 網域本身。
 
 ```bash
 /seo-optimize                      # 完整流程：研究 → 分析 → 詢問 → 規劃 → 確認 → 套用
@@ -29,23 +31,19 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 /seo-optimize ./my-site --reset    # 指定專案並重設目標設定
 ```
 
-### 由其他 skill 呼叫
+### 呼叫方
 
-`/readme-generate` 與 `/wiki-generate` 完成後都會以專案根呼叫本 skill。檢查範圍由 Step 2 偵測決定，不由呼叫來源決定，所以兩個入口都會檢查到同樣的面向：
+其他流程可在產出後以專案根呼叫本 skill。檢查範圍由 Step 2 偵測決定，不由呼叫來源決定，所以每個入口都會檢查到同樣的面向：
 
 | 偵測結果 | 必檢規則 |
 |---|---|
 | `git remote get-url origin` 為 `github.com` | R9：repo description、topics、homepage 與 README 簡短描述，不一致時以 `AskUserQuestion` 附完整 `gh repo edit` 指令詢問 |
-| 存在 `wiki-worker/public`（或其他 `web_surfaces`） | R1–R7、R10–R16 頁面層與爬蟲指令 |
-| 存在 `wiki-worker/build.js` | 所有 SEO 值寫入 `wiki-worker/seo.json`，依 [`scripts/wiki_worker_contract.md`](scripts/wiki_worker_contract.md) 產生與檢查 |
+| `web_surfaces` 非空 | R1–R7、R10–R16 頁面層與爬蟲指令 |
 | `code_type` ∈ {library, cli} | R8 套件登錄頁、R10 |
 
-| 呼叫來源 | 主要目的 | 一併檢查 |
-|---|---|---|
-| `/readme-generate` | GitHub repo 描述與 description／topics（R9） | 有 `wiki-worker/` 時檢查文件站 |
-| `/wiki-generate` | `wiki-worker/` 文件站：`/wiki-generate` 只寫內容，`seo.json` 內所有 SEO 值由本 skill 依最新研究產生（必經步驟，非選用） | 是 GitHub repo 時檢查 description／topics（R9） |
+呼叫方指明由它產生的檔案（例：建置來源、設定檔、頁面原始檔）本 skill 只檢查、不修改：修正項照常列入規劃並標「交由呼叫方」，由呼叫方依規劃套用。呼叫方或使用者給的站台決策（例：title 不列某類名稱、保留某檔、不設競品）寫入 config `decisions`。
 
-**為何：** repo 頁與文件站是同一組定位的兩個搜尋面，只檢查呼叫來源負責的那一面，另一面的描述會漂移（go-rest-client 2026-10-06：`/readme-generate` 跑完但 repo description／topics 未檢查）。
+**為何：** repo 頁與文件站是同一組定位的兩個搜尋面，只檢查呼叫來源負責的那一面，另一面的描述會漂移（例：README 產生後 repo description／topics 未檢查）。產生器管理的檔案被本 skill 直接改，下次產生就被覆蓋，或與產生器的事實來源分岔。
 
 ---
 
@@ -69,7 +67,7 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 
 ## Step 1：研究（強制 gate，不可跳過）
 
-**先檢查 `~/.claude/skills/seo-optimize/.doc/research/` 有無 3 日內生成的 SEO／AEO／GEO 研究報告**（檔名日期 ≥ `date -v-3d +%Y-%m-%d`，macOS；Linux 用 `date -d '3 days ago' +%Y-%m-%d`）：有則讀取最新一份沿用；沒有才完整跑一次 [`scripts/research_protocol.md`](scripts/research_protocol.md) 的 Phase A，結果存成 `{yyyy-MM-dd}.md`（skill 層，跨專案共用）。3 日沿用只適用這份報告；競品研究（Phase B）、補研究（Phase C）與熱度量測各依其步驟條件執行，不因此略過。
+**先檢查 `{skill_dir}/.doc/research/` 有無 3 日內生成的 SEO／AEO／GEO 研究報告**（檔名日期 ≥ `date -v-3d +%Y-%m-%d`，macOS；Linux 用 `date -d '3 days ago' +%Y-%m-%d`）：有則讀取最新一份沿用；沒有才完整跑一次 [`scripts/research_protocol.md`](scripts/research_protocol.md) 的 Phase A，結果存成 `{yyyy-MM-dd}.md`（skill 層，跨專案共用）。3 日沿用只適用這份報告；競品研究（Phase B）、補研究（Phase C）與熱度量測各依其步驟條件執行，不因此略過。
 
 | 條件 | 行為 |
 |---|---|
@@ -83,7 +81,7 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 
 **為何只快取 3 日：** SEO / AEO 有效做法半年內會反轉，必須定期重查；3 日內官方立場與標準狀態幾乎不會變，重查只浪費時間。2025 年主流指南建議加 llms.txt 提升 AI 可見度，2026-05 Google 官方文件表明其被忽略；同份文件亦推翻「特定 schema 觸發 AI 引用」。憑記憶作答會產出反效果的動作。
 
-產出：Phase A 報告 `~/.claude/skills/seo-optimize/.doc/research/{yyyy-MM-dd}.md`；網域 digest `~/.claude/skills/seo-optimize/.doc/{網域}/research/{yyyy-MM-dd}.md` 記 Phase B／C 並連到該報告（格式見 research_protocol.md）。
+產出：Phase A 報告 `{skill_dir}/.doc/research/{yyyy-MM-dd}.md`；網域 digest `{skill_dir}/.doc/{網域}/research/{yyyy-MM-dd}.md` 記 Phase B／C 並連到該報告（格式見 research_protocol.md）。
 
 **新規範回報（強制）：** 本次研究（含 A-5 標準追蹤）查到的內容只要**新於或高於 skill 現有資訊**——knowledge_anchors、optimization_rules、範本行為任一處沒有記載、記載過時或被推翻——回應的**最後一段**必須是「本次發現的新規範」表：
 
@@ -101,12 +99,13 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 
 ### 讀取過去分析
 
-先列出 `~/.claude/skills/seo-optimize/.doc/{網域}/`，讀 `plan/` 與 `applied/` 各自檔名時間最新的一份；`analysis/` 有檔案時讀最新一份作為背景資料（skill 外部產生的數據分析，不當成上次 plan）；`research/` 只在 Step 2.5 判斷是否沿用時讀最新一份。
+先列出 `{skill_dir}/.doc/{網域}/`，讀 `plan/` 與 `applied/` 各自檔名時間最新的一份；`analysis/` 有檔案時讀最新一份作為背景資料（skill 外部產生的數據分析，不當成上次 plan）；`research/` 只在 Step 2.5 判斷是否沿用時讀最新一份。
 
 | 上次結論 | 本次處理 |
 |---|---|
 | applied 的「未套用」「需人工後續」、plan 的「需使用者決策」 | 逐項以本次實抓狀態重驗：已解決 → 規劃的「與上次分析的差異」記為已解決；仍存在 → 列入本次規劃並標「延續自 {ts}」 |
 | 使用者否決或列入「不執行項目」 | 狀態沒變就不再提出；狀態有變才重提並說明變了什麼 |
+| config `decisions` | 視為已定案：Step 3 不重問、Step 4 規劃不提出與其衝突的項目；本次研究推翻其依據時列入「需使用者決策」並附來源，不自行改寫 |
 | 已套用項目 | 抽查仍在線上生效；被覆蓋或回退的列為缺口 |
 | 資料夾不存在或沒有 plan | 首次分析，規劃的差異段寫「首次分析」 |
 | config 的 `last_optimized` 距今 < 28 天 | 規劃盤點標「觀察期不足（N 天）」；上次套用項目只驗證是否仍生效，不以排名、曝光、點擊、AI 引用的變化判斷成效，也不因此提出回退或改寫 |
@@ -117,7 +116,7 @@ description: 分析專案並實際套用 SEO / AEO / GEO 優化。當使用者�
 ### 盤點
 
 ```bash
-python3 ~/.claude/skills/seo-optimize/scripts/analyze_seo.py {PROJECT_PATH}
+python3 {skill_dir}/scripts/analyze_seo.py {PROJECT_PATH}
 ```
 
 輸出 JSON：`code_type`、`web_surfaces`、`web_framework`、`package_metadata`、`crawler_directives`、`metadata_apis`、`pages`、`contents`。
@@ -125,7 +124,7 @@ python3 ~/.claude/skills/seo-optimize/scripts/analyze_seo.py {PROJECT_PATH}
 ### 線上爬取（有部署網域時）
 
 ```bash
-python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [--legacy {舊網址清單檔}]
+python3 -I {skill_dir}/scripts/crawl_site.py https://{host} [--legacy {舊網址清單檔}]
 ```
 
 只爬該 host：sitemap 索引中其他 host 的 sitemap 只計數不爬（`foreign_hosts_in_sitemaps`）。輸出 `status_counts`、`composition`（sitemap 依路徑前綴的占比）、`probes`、`legacy` 與每頁 `<head>` 盤點。
@@ -138,9 +137,9 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | `composition` | 單一非文件前綴（版本頁、展示頁、標籤頁）占比 ≥ 30% → R16 |
 | `pages[]` 與 `analyze_seo.py` 的 `pages` 不一致 | 線上與原始碼漂移（例：建置未部署、worker 改寫），以線上為準列缺口並註明來源檔 |
 
-**舊網址清單：** 由 git 歷史推出被刪除或改名的頁面原始檔，依專案的「原始檔 → URL」對應換算成網址寫入清單檔（放 `{網域}/analysis/legacy-{yyyy-MM-dd}.txt`）。wiki-worker 型專案：`git log --diff-filter=DR --name-status --format= -- wiki-worker/public/docs/pages/`，`{slug}.md` → `/{slug}`、`{slug}.zh.md` → `/zh/{slug}`；其他專案依其路由規則換算，換算不出的列入規劃「未確認」而不猜。
+**舊網址清單：** 由 git 歷史推出被刪除或改名的頁面原始檔，依專案的「原始檔 → URL」對應換算成網址寫入清單檔（放 `{網域}/analysis/legacy-{yyyy-MM-dd}.txt`）；呼叫方已提供當日清單檔就沿用。依專案路由規則換算，換算不出的列入規劃「未確認」而不猜。
 
-**為何：** worker 改寫、CDN 自動導向與已刪頁面的處理只存在於線上；只掃原始碼看不到。2026-10-22 pardn.io 子站與 agenvoy.com 的舊網址全被 302 導回首頁，原始碼盤點完全正常。
+**為何：** worker 改寫、CDN 自動導向與已刪頁面的處理只存在於線上；只掃原始碼看不到。曾有多個站台的舊網址全被 302 導回首頁，原始碼盤點卻完全正常。
 
 **腳本只做機械盤點，不理解專案在做什麼。**接著研究目標內容：
 
@@ -152,7 +151,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | 文件狀況 | 做法 |
 |---|---|
 | 有 README／`doc/`，且足以回答下表每一項 | 以文件為準，抽查入口檔確認文件未過時 |
-| 沒有文件，或缺任一項的細節 | 依 [`readme-generate`](../readme-generate/SKILL.md) 步驟 1–3 做全專案分析：`python3 ~/.claude/skills/readme-generate/scripts/analyze_project.py {PROJECT_PATH}`（需 Python ≥ 3.10），實讀入口檔、主要型別與匯出函式，依其「特色選擇原則」提煉 3–5 個特色 |
+| 沒有文件，或缺任一項的細節 | 做全專案分析：實讀入口檔、主要型別與匯出函式，提煉 3–5 個原始碼可查證的特色 |
 
 據此判斷：
 
@@ -162,7 +161,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | 專案實際具備哪些能力 | Step 3 篩選候選：競品常用但本專案沒有的能力不得成為關鍵字 |
 | 目標使用者是誰（開發者／終端使用者／企業） | 決定 R6 的 schema 類型 |
 | 有無實際部署網域 | 決定 canonical / sitemap 能否產生 |
-| README 是否由 `/readme-generate` 管理 | 決定 R9 是直接改寫還是只回報建議 |
+| README 是否由產生器管理（呼叫方指明，或專案 CLAUDE.md 標示） | 決定 R9 是直接改寫還是只回報建議 |
 | `git remote get-url origin` 是否為 `github.com` | 是 → R9 必檢，不論 `code_type`；以 `gh repo view {owner}/{repo} --json description,repositoryTopics,homepageUrl` 取現況 |
 
 **對照 Step 1 報告找缺口：** 逐條取報告的「本次可執行結論」與「本次發現的新規範」中的參數與資料（meta、schema 屬性、HTTP header、robots／well-known 指令、檔案如 llms.txt 新欄位等），以 `analyze_seo.py` 輸出與實際檔案檢查目標是否具備。
@@ -191,13 +190,13 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | 未滿 90 天：以 `keyword_volume.anchor` 重量主要關鍵字，任一詞 `recent4w` < 記錄值的 50% | 執行 Phase B 並在詢問時列出下滑的詞與前後數值 |
 | 未滿 90 天且熱度未下滑，未帶 `--reset` | 略過 Phase B，Step 3 沿用 config 關鍵字 |
 
-**為何：** 只從原始碼推關鍵字，得到的是作者自己的說法；使用者實際搜尋、高星同類 repo 與社群熱門文章用的詞才是搜尋面上會被比對的詞。競品的品牌名與類別詞十之八九是熱門詞，不量熱度就會選到「沒人佔、也沒人搜」的詞（Agenvoy 2026-10-21：首輪主詞 `local ai agent`、`24/7 personal ai agent` 熱度 ≤ 1，同期 `claude code` 36、`ollama` 12）。
+**為何：** 只從原始碼推關鍵字，得到的是作者自己的說法；使用者實際搜尋、高星同類 repo 與社群熱門文章用的詞才是搜尋面上會被比對的詞。競品的品牌名與類別詞十之八九是熱門詞，不量熱度就會選到「沒人佔、也沒人搜」的詞（例：某本地 AI agent 首輪主詞 `local ai agent`、`24/7 personal ai agent` 熱度 ≤ 1，同期 `claude code` 36、`ollama` 12）。
 
 ---
 
 ## Step 3：設計關鍵字
 
-先檢查 `~/.claude/skills/seo-optimize/.doc/{網域}/config.json`：
+先檢查 `{skill_dir}/.doc/{網域}/config.json`：
 
 | 狀態 | 行為 |
 |---|---|
@@ -216,25 +215,25 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | 多語言 | 每個語言以該語言 Phase B 的結果各自設計，禁止由另一語言翻譯 |
 | 詢問呈現 | 每個候選附證據：出現來源數、代表來源（repo 星數／HN points／第一頁排名） |
 | topics 候選 | 取自 Phase B 收集到的高星 repo topics，再依 R9 門檻篩選 |
-| 跨網域重疊 | 掃 `~/.claude/skills/seo-optimize/.doc/*/config.json`：候選詞已是其他網域的 `primary_keywords` → 詢問時標「與 {網域} 重疊」，由使用者選擇：本網域改用區分詞、保留重疊（例：前身專案）、或調整另一網域 |
+| 跨網域重疊 | 掃 `{skill_dir}/.doc/*/config.json`：候選詞已是其他網域的 `primary_keywords` → 詢問時標「與 {網域} 重疊」，由使用者選擇：本網域改用區分詞、保留重疊（例：前身專案）、或調整另一網域 |
 
 ### 與競品建立關聯
 
 每個競品都要在每個語言版本的內文點名，寫出關聯、差異與本專案特點，並帶入競品品牌名與類別詞增加查詢觸發；依 B-4 的同型／異型決定說法：
 
-| 競品類型 | 說法 | 例（Agenvoy：本地 AI agent） |
+| 競品類型 | 說法 | 例（本專案為本地 AI agent） |
 |---|---|---|
-| 異型（部署型態相反） | 點名競品，對比型態差異 | Grok Bot、Meta Muse 跑在廠商雲端 → Agenvoy 跑在你自己的電腦，本地優先 |
-| 同型 | 點名競品，講本專案可查證的特色 | OpenClaw、Hermes Agent 是 TypeScript／Python 專案 → Agenvoy 核心是單一 Go 執行檔、會自建工具 |
+| 異型（部署型態相反） | 點名競品，對比型態差異 | 競品 A、B 跑在廠商雲端 → 本專案跑在你自己的電腦，本地優先 |
+| 同型 | 點名競品，講本專案可查證的特色 | 競品 C、D 是 TypeScript／Python 專案 → 本專案核心是單一 Go 執行檔、會自建工具 |
 | 本專案支援的生態詞 | 直接當能力詞使用 | Claude Code、Ollama、MCP |
 
 | 邊界 | 規則 | 為何 |
 |---|---|---|
 | 放置位置 | 競品名只放內文段落；title、meta description、H1、首頁開頭只寫本專案自身定位（可用高熱度的類別詞與生態詞） | 產品 title 蹭別人名稱顯得低端，使用者 2026-10-21 明確否決 |
 | 不寫「替代品」 | 不用「X alternative」「X 替代」框定自己 | 把自己定位成別人的附屬；且 `X alternative` 類詞實測熱度多為 0 |
-| 對比必須可查證 | 競品特性取自其官方頁或 `gh api`，本專案特性取自原始碼；不得暗示競品缺少它其實有的能力，也不得宣稱本專案不需要它實際依賴的東西 | Hermes Agent 也有 self-created skills；Agenvoy 的沙箱工具依賴 Node.js／Python，「不用裝 Node.js 或 Python」屬誤導 |
+| 對比必須可查證 | 競品特性取自其官方頁或 `gh api`，本專案特性取自原始碼；不得暗示競品缺少它其實有的能力，也不得宣稱本專案不需要它實際依賴的東西 | 例：競品也能自建工具卻被寫成本專案獨有；本專案的沙箱工具依賴 Node.js／Python，卻寫「不用裝 Node.js 或 Python」屬誤導 |
 | 只承接本專案答得了的意圖 | 競品的衍生詞（`{競品} 教學`、`{競品} install`、`{競品} pricing`）不列入關鍵字 | 本專案沒有別人專案的教學，放了等於宣稱答不了的查詢 |
-| 放進既有內文 | 對比寫進首頁介紹段或概覽頁的既有段落；比較頁、FAQ 頁只在使用者主動提及時才做；無 `web_surfaces` 時列為規劃建議，README 由 `/readme-generate` 管理時只回報 | 使用者 2026-10-21 否決比較頁與 FAQ；R5 也禁止為 AI 塞問答樣板 |
+| 放進既有內文 | 對比寫進首頁介紹段或概覽頁的既有段落；比較頁、FAQ 頁只在使用者主動提及時才做；無 `web_surfaces` 時列為規劃建議，README 由產生器管理時只回報 | 使用者 2026-10-21 否決比較頁與 FAQ；R5 也禁止為 AI 塞問答樣板 |
 
 ### 已固定的預設（**不再詢問**）
 
@@ -281,12 +280,13 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
   "locale_policy": "per-language-full",
   "engines": ["google", "google-ai", "chatgpt", "perplexity", "claude"],
   "has_physical_location": false,
-  "domain": "https://pardn.io/go-scheduler",
+  "domain": "https://example.com",
   "keyword_research": "2026-10-06",
   "last_analyzed": "2026-10-21",
   "last_optimized": "2026-10-07",
   "keyword_volume": {"checked": "2026-10-06", "anchor": "golang", "geo": ["WW", "TW"], "terms": {"go scheduler": {"geo": "WW", "avg": 3.1, "recent12w": 3.4, "recent4w": 3.0}}},
   "competitors": [{"name": "robfig/cron", "type": "same"}],
+  "decisions": [{"item": "title", "value": "只寫姓名與身分定位，不列專案名稱", "since": "2026-10-27"}],
   "one_liner": {
     "en": "A Go task scheduler with cron syntax, dependency chains, and fsnotify hot reload",
     "zh": "Go 任務排程器，支援 cron 語法、任務相依鏈與 fsnotify 熱重載"
@@ -294,11 +294,13 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 }
 ```
 
-`one_liner` 由 Step 4 依 R9 設計，是 README 簡短描述（`/readme-generate` 順序 3）、GitHub repo description 與 topics 的單一來源。
+`one_liner` 由 Step 4 依 R9 設計，是 README 簡短描述、GitHub repo description 與 topics 的單一來源。
 
 `keyword_research` 為關鍵字依 Phase B 競品研究設計的日期，對應 digest 檔名；要重新研究時帶 `--reset`。`keyword_volume` 記 Step 3.2 複查的日期、anchor、geo 與每個主要關鍵字的量測值（`terms`，供 Step 2.5 判斷熱度下滑）；`competitors` 記 B-4 的競品與同型（`same`）／異型（`opposite`）。
 
 `last_analyzed` 為最新一份 plan 的日期，Step 4 產出 plan 時更新；`last_optimized` 為最新一份「已套用」非「無」的 applied 日期，Step 6 產出 applied 時更新，零套用不更新。兩者供 Step 2 判斷觀察期與跨網域 review。
+
+`decisions` 記使用者或呼叫方定案的站台決策（`item`、`value`、`since`），只在使用者或呼叫方指示時新增、修改或移除。
 
 `locales` 依專案實際存在的語言版本填寫；`locale_policy` 與 `engines` 為固定值，不因專案而異。
 
@@ -327,7 +329,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 
 **為何：** 規劃的順序就是動手的順序；過時參數投入再多也不影響結果，放前面只會排擠真正有效的項目。
 
-再依 [`scripts/optimization_rules.md`](scripts/optimization_rules.md) 逐條比對分析結果，產出 `~/.claude/skills/seo-optimize/.doc/{網域}/plan/{yyyy-MM-dd_HH-mm}.md`（格式見 [`scripts/output_format.md`](scripts/output_format.md)），並把 config 的 `last_analyzed` 更新為本次日期。
+再依 [`scripts/optimization_rules.md`](scripts/optimization_rules.md) 逐條比對分析結果，產出 `{skill_dir}/.doc/{網域}/plan/{yyyy-MM-dd_HH-mm}.md`（格式見 [`scripts/output_format.md`](scripts/output_format.md)），並把 config 的 `last_analyzed` 更新為本次日期。
 
 **產出後必須向使用者呈現摘要並取得明確確認才進入 Step 5。**規劃會修改專案檔案，屬不易還原的動作。
 
@@ -344,8 +346,9 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | 檔案修改 | 逐項套用，每項對應規劃中的編號 |
 | `robots.txt` 封鎖規則、`noindex` 移除 | 規劃中已標為「需使用者決策」者，未獲答覆前不動 |
 | 遠端 repo metadata（`gh repo edit`） | 依 R9 比對現況，不一致時以 `AskUserQuestion` 附完整指令詢問；同意才執行並以 `gh repo view` 驗證，否決則列入需人工後續 |
-| README | 由 `/readme-generate` 管理時只回報建議，不直接改寫結構 |
-| wiki-worker 文件站 | SEO 值只寫 `wiki-worker/seo.json`，改完重跑 `node wiki-worker/build.js` 並跑契約的「套用後檢查」；頁面內容缺口交回 `/wiki-generate`，不直接改 `pages/*.md` 或 `public/` 產物 |
+| README | 由產生器管理時只回報建議，不直接改寫結構 |
+| 建置產物（HTML、sitemap、robots.txt、llms.txt 等由建置產生者） | 不直接改；改產生它的來源後重跑建置 |
+| 呼叫方或專案 CLAUDE.md 標示由產生器管理的檔案 | 不改；列入 applied「交由呼叫方」，附規則編號與建議值 |
 | git | **不執行 `git commit` / `git push` / `git tag`** |
 
 規劃外的「順手改一下」一律不做。
@@ -354,12 +357,13 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 
 ## Step 6：驗證
 
-產出 `~/.claude/skills/seo-optimize/.doc/{網域}/applied/{yyyy-MM-dd_HH-mm}.md`，並執行下列自我檢查：
+產出 `{skill_dir}/.doc/{網域}/applied/{yyyy-MM-dd_HH-mm}.md`，並執行下列自我檢查：
 
 - [ ] Step 1 研究報告為 3 日內生成（本次執行或沿用）且含實抓的 Tier 1 來源；網域 digest 已落檔並連到該報告
 - [ ] 已讀 `{網域}/` 最新的 plan／applied，上次的未套用、需人工後續、需使用者決策項目都已重驗，並記在規劃的「與上次分析的差異」
+- [ ] 規劃沒有與 config `decisions` 衝突的項目；依據被推翻者已列「需使用者決策」
 - [ ] config 的 `last_analyzed` 為本次 plan 日期；本次「已套用」非「無」時 `last_optimized` 為本次日期，否則維持原值
-- [ ] 所有產出都在 `~/.claude/skills/seo-optimize/.doc/{網域}/`，專案目錄內沒有新增 `.doc/seo-optimize/`
+- [ ] 所有產出都在 `{skill_dir}/.doc/{網域}/`，專案目錄內沒有新增 `.doc/seo-optimize/`
 - [ ] 有部署網域者已跑 `crawl_site.py`：`probes` 與 `legacy` 的 3xx／`to_root` 已列入 R15，`composition` 超過門檻者已列入 R16；舊網址清單由 git 歷史推出（推不出者標未確認）
 - [ ] 關鍵字研究未逾 90 天、主要關鍵字熱度未下滑；否則已重跑 Phase B；跨網域重疊已標示並由使用者決定
 - [ ] 研究對象為使用者提及的目標（未提及則為本專案）；文件不足時已做全專案分析
@@ -377,7 +381,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 - [ ] `web_surfaces` 為空時未產生任何頁面層變更
 - [ ] canonical / sitemap 中的網域為實際確認過的網域
 - [ ] Organization 節點只代表實際存在的組織（定位文字不得成為 Organization），多語頁各用自身語言的正式名稱，`@id` 與作者網站一致
-- [ ] Person `sameAs` 包含 `~/.skill-readme-generate.json` 的 `same_as` 每一項，個人與組織帳號分開，與作者網站差異已列入人工後續
+- [ ] Person `sameAs` 包含 `{skill_dir}/.doc/author.json` 的 `same_as` 每一項，個人與組織帳號分開，與作者網站差異已列入人工後續
 - [ ] `dateModified` 由內容雜湊判定（含 meta 與 JSON-LD，本次改過的頁面日期皆已更新），連續建置兩次日期不變；頁面可見日期與 JSON-LD、sitemap `lastmod` 一致
 - [ ] 接了 IndexNow 者：key 檔線上回 200，送出回 200／202，重跑只送有變動的 URL
 - [ ] `csr_shell == true` 的頁面已列為 R11 Critical，未被其他內容層項目蓋過
@@ -385,7 +389,7 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 - [ ] 驗證碼、IndexNow key 未被填造
 - [ ] 未執行 git 寫入指令；`gh repo edit` 只在使用者於 `AskUserQuestion` 同意後執行，且已以 `gh repo view` 確認生效
 - [ ] A-5 標準追蹤已實抓，A12 已更新驗證日期
-- [ ] wiki-worker 文件站：`seo.json` 每個欄位依本次研究重驗、每個 NAV slug 都有 description，契約「套用後檢查」全部通過
+- [ ] 未直接修改建置產物；呼叫方管理的檔案未修改，修正項已列「交由呼叫方」
 - [ ] `web_surfaces` 非空者已產生 llms.txt：每頁有 Markdown 版與兩個探索連結、可見的 llms.txt／Markdown 連結；`.md`／`.txt` 回應帶 `charset=utf-8`
 - [ ] 回應最後一段為「本次發現的新規範」表（或一行聲明無新規範）
 - [ ] `CHANGELOG.md`「破壞性變更」已逐項比對既有產物，命中項已修改並列於回應；本次改了 `SKILL.md`／`scripts/` 者已更新 CHANGELOG
@@ -414,5 +418,4 @@ python3 -I ~/.claude/skills/seo-optimize/scripts/crawl_site.py https://{host} [-
 | Step 1 / 4 | [`scripts/knowledge_anchors.md`](scripts/knowledge_anchors.md) | 已驗證的一手立場快照，用於偵測變動與識破業界迷思；每次執行後更新 |
 | Step 4 / 5 | [`scripts/optimization_rules.md`](scripts/optimization_rules.md) | 規則 R1–R16、禁止動作、嚴重度定義 |
 | Step 4 / 6 | [`scripts/output_format.md`](scripts/output_format.md) | 規劃與執行結果的報告範本 |
-| Step 5 / 6 | [`scripts/wiki_worker_contract.md`](scripts/wiki_worker_contract.md) | wiki-worker 文件站的 `seo.json` 欄位、套用位置與套用後檢查 |
 | Step 4 | [`CHANGELOG.md`](CHANGELOG.md) | 破壞性變更清單，快速定位既有產物與最新規範的差異 |
